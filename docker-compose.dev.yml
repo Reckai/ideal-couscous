@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: netflix-tinder-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-netflix_tinder_dev}
+      # Performance tuning для разработки
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+    volumes:
+      # Персистентность данных
+      - postgres_data:/var/lib/postgresql/data
+      # Опционально: кастомная конфигурация
+      # - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devuser} -d ${POSTGRES_DB:-netflix_tinder_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Redis Cache & Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: netflix-tinder-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-devredispass}
+    volumes:
+      # Персистентность для AOF
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  # Опционально: Redis Commander (GUI для Redis)
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: netflix-tinder-redis-ui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD:-devredispass}
+    depends_on:
+      - redis
+    networks:
+      - app-network
+    profiles:
+      - tools # Запускать только когда нужно: docker-compose --profile tools up
+
+  # Опционально: pgAdmin (GUI для PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: netflix-tinder-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@local.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

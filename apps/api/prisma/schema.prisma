@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Media {
+  id        String   @id @default(uuid())
+  posterPath String  @map("poster_path")
+  poster    String?
+  title     String
+  tmdbId    String?  @map("tmdb_id")
+  TMDBLink  String?  @map("tmdb_link")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  matches     RoomMatch[]
+
+}
+
+model User {
+  id          String @id @default(uuid())
+  hostedRooms Room[] @relation("HostRooms")
+  guestRooms  Room[] @relation("GuestRooms")
+  name        String @unique
+  passwordHash  String    @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastLoginAt   DateTime? @map("last_login_at")
+
+
+  @@map("users")
+
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  inviteCode  String     @unique @map("invite_code")
+  status      RoomStatus @default(WAITING)
+
+  hostId      String     @map("host_id")
+  host        User       @relation("HostRooms", fields: [hostId], references: [id])
+
+  guestId     String?    @map("guest_id")
+  guest       User?      @relation("GuestRooms", fields: [guestId], references: [id])
+
+  preferences Json?
+
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  expiresAt   DateTime   @map("expires_at")
+
+  // ONE-TO-ONE relation (пока)
+  match       RoomMatch?
+
+  @@index([status, expiresAt])
+  @@map("rooms")
+}
+
+model RoomMatch {
+  id        String   @id @default(uuid())
+
+  roomId    String   @unique @map("room_id")  // ← UNIQUE = ONE-TO-ONE
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  mediaId   String   @map("media_id")
+  media     Media    @relation(fields: [mediaId], references: [id])
+
+  matchedAt DateTime @default(now()) @map("matched_at")
+
+  // Опционально: метаданные (можно добавить позже)
+  // swipesCount Int?
+  // matchDurationMs Int?
+
+  @@index([mediaId])      // Для аналитики
+  @@index([matchedAt])    // Для истории
+  @@map("room_matches")
+}
+
+enum RoomStatus {
+  WAITING        // Ждем второго пользователя
+  SELECTING      // Оба выбирают фильмы
+  READY          // Оба выбрали, готовы свайпать
+  SWIPING        // Идет процесс свайпинга
+  MATCHED        // Нашли совпадение
+  EXPIRED        // Истек срок (TTL)
+  CANCELLED      // Кто-то вышел
+}
+enum MatchStatus {
+  PENDING        // Еще свайпают
+  MATCHED        // Оба лайкнули
+  REJECTED       // Хотя бы один skip
+}

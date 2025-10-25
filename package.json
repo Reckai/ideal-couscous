@@ -1,0 +1,45 @@
+{
+  "name": "netflix-tinder",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run docker:dev && npm run dev:apps",
+    "dev:apps": "concurrently \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:api": "cd apps/api && npm run start:dev",
+
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up -d postgres redis redis-commander",
+    "docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:restart": "docker-compose -f docker-compose.dev.yml restart",
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "docker:status": "docker-compose -f docker-compose.dev.yml ps",
+    "docker:tools": "docker-compose -f docker-compose.dev.yml --profile tools up -d",
+    "docker:tools-down": "docker-compose -f docker-compose.dev.yml --profile tools down",
+    "docker:clean": "docker-compose -f docker-compose.dev.yml down -v",
+
+    "db:migrate": "cd apps/api && npx prisma migrate dev",
+    "db:reset": "cd apps/api && npx prisma migrate reset --force",
+    "db:studio": "cd apps/api && npx prisma studio",
+    "db:seed": "cd apps/api && npx prisma db seed",
+    "db:generate": "cd apps/api && npx prisma generate",
+    "db:backup": "node scripts/db-backup.js",
+
+    "redis:cli": "docker exec -it netflix-tinder-redis redis-cli -a devredispass",
+    "redis:flush": "docker exec -it netflix-tinder-redis redis-cli -a devredispass FLUSHALL",
+
+    "setup": "npm install && npm run docker:dev && timeout /t 5 && npm run db:migrate",
+    "clean:all": "npm run docker:clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
