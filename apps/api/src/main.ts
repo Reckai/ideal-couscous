@@ -1,14 +1,6 @@
-// ============================================
-// КРИТИЧЕСКИ ВАЖНО: Загрузить .env ПЕРВЫМ!
-// Это должно быть ДО любых других импортов
-// ============================================
 import { config } from 'dotenv';
-import { resolve } from 'path';
 
-// Загружаем .env из корня проекта
-const envPath = resolve(__dirname, '../../../.env');
-
-config({ path: envPath });
+config();
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';

@@ -18,11 +18,11 @@ export class RoomResponseDTO {
   @ApiProperty({ example: 'ABC123' })
   status: RoomStatus;
 
-  @ApiProperty({ type: RoomUserDTO })
-  host: RoomUserDTO;
+  @ApiProperty({ type: 'boolean' })
+  isHost: boolean;
 
-  @ApiProperty({ type: RoomUserDTO })
-  guest?: RoomUserDTO | null;
+  @ApiProperty({ type: 'boolean' })
+  hasGuest?: boolean | null;
 
   @ApiProperty({ example: '2024-10-12T10:00:00Z' })
   createdAt: Date;
@@ -31,8 +31,7 @@ export class RoomResponseDTO {
   updatedAt: Date;
 
   @ApiProperty({
-    description: 'Time to expiration in ms',
-    example: 1800000,
+    example: '2024-10-12T10:30:00Z',
   })
-  timeRemaining: number;
+  expiresAt: Date;
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { RoomCacheRepository } from './room/repositories/room-cache.repository';
+import { RoomCacheRepository } from './room/repositories';
 import { randomUUID } from 'crypto';
 
 @Injectable()
