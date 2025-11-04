@@ -27,8 +27,7 @@ export class RedisService
       password: configService.get<string>('REDIS_PASSWORD'),
       db: configService.get<number>('REDIS_DB', 0),
       retryStrategy: (times: number) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
+        return Math.min(times * 50, 2000);
       },
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
