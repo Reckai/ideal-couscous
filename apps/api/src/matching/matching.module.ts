@@ -5,9 +5,10 @@ import { MatchingGateway } from './matching.gateway';
 import { MatchingService } from './matching.service';
 import { MatchingCacheRepository } from './repositories/matching-cache.repository';
 import { RoomModule } from '../room/room.module';
+import { UserModule } from '../user';
 
 @Module({
-  imports: [RoomModule], // Import RoomModule for repositories
+  imports: [RoomModule, UserModule], // Import RoomModule for repositories
   providers: [MatchingGateway, MatchingService, MatchingCacheRepository],
   exports: [MatchingService], // Export if needed by other modules
 })

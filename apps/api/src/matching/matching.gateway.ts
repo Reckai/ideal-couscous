@@ -48,22 +48,43 @@ export class MatchingGateway
   ) {}
 
   async handleConnection(client: AuthenticatedSocket) {
-    // TODO: Extract userId from session cookie when auth is ready
-    // For now, expect userId in query params (TEMPORARY)
-    const userId = client.handshake.query.userId as string;
-    if (!userId) {
-      this.logger.warn(
-        `Connection rejected: missing userId (socket ${client.id})`,
+    try {
+      const cookies = this.parseCookies(client.handshake.headers.cookie);
+      const cookieUserId = cookies?.anonymousUserId;
+
+      let userId;
+      if (cookieUserId) {
+        this.logger.debug(`WebSocket: Found cookie userId: ${cookieUserId}`);
+        const user = await this.userService.getOrCreateUser(cookieUserId);
+        userId = user.id;
+        if (user.id !== cookieUserId) {
+          this.logger.warn(
+            `WebSocket: Cookie userId ${cookieUserId} not found, created new user ${user.id}`,
+          );
+        }
+      } else {
+        // No cookie - create new anonymous user
+        this.logger.debug('WebSocket: No cookie found, creating new user');
+        const user = await this.userService.createAnonymousUser();
+        userId = user.id;
+      }
+      // Attach userId to socket
+      client.userId = userId;
+      this.logger.log(`WebSocket connected: ${client.id} (user: ${userId})`);
+
+      // Send userId back to client (so they can store it)
+      client.emit('authenticated', { userId });
+    } catch (err) {
+      this.logger.error(
+        `WebSocket connection error: ${err.message}`,
+        err.stack,
       );
       client.emit('error', {
-        message: 'Authentication required',
-        code: 'AUTH_REQUIRED',
+        message: 'Authentication failed',
+        code: 'AUTH_FAILED',
       } as ErrorDto);
       client.disconnect();
-      return;
     }
-    client.userId = userId;
-    this.logger.log(`Client connected: ${client.id} (user: ${userId})`);
   }
   async handleDisconnect(client: AuthenticatedSocket) {
     const { userId, roomId } = client;
@@ -101,24 +122,42 @@ export class MatchingGateway
   ) {
     const { userId } = client;
     const { roomId } = data;
+    if (!userId) {
+      client.emit('error', {
+        message: 'Not authenticated',
+        code: 'NOT_AUTHENTICATED',
+      } as ErrorDto);
+      return;
+    }
+
     try {
       const room = await this.matchingService.validateRoomStatus(roomId);
       this.matchingService.validateUserMembership(room, userId);
+
       await client.join(roomId);
       client.roomId = roomId;
+
       if (!this.roomUsers.has(roomId)) {
         this.roomUsers.set(roomId, new Set());
         this.roomUsers.get(roomId)!.add(userId!);
 
         this.logger.log(`User ${userId} joined room ${roomId}`);
+
         const mediaPool = await this.matchingService.getMediaPoolWithDetails(
           room.id,
         );
 
+        // Notify others in room
         client.to(roomId).emit('user_joined', {
           userId,
           status: 'online',
+        });
+
+        // Send media pool to the user who just joined
+        client.emit('room_joined', {
+          roomId,
           mediaPool,
+          message: 'Successfully joined room',
         });
       }
     } catch (err) {
@@ -151,6 +190,7 @@ export class MatchingGateway
 
     await client.leave(roomId);
     client.roomId = undefined;
+
     await this.matchingService
       .handleUserDisconnect(roomId, userId!)
       .catch((err) => {
@@ -169,6 +209,13 @@ export class MatchingGateway
   ) {
     const { userId, roomId } = client;
     const { mediaId, action } = data;
+    if (!userId) {
+      client.emit('error', {
+        message: 'Not authenticated',
+        code: 'NOT_AUTHENTICATED',
+      } as ErrorDto);
+      return;
+    }
 
     if (!roomId) {
       client.emit('error', {
