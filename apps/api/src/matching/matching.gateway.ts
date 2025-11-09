@@ -18,8 +18,8 @@ import {
 
 import { MatchingService } from './matching.service';
 import { JoinRoomDTO } from './dto/join-room.dto';
+import { UserService } from '../user';
 
-// TODO: Replace with real auth guard when sessions are implemented
 // For now, we'll pass userId in the connection query params
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -42,7 +42,10 @@ export class MatchingGateway
   private readonly logger = new Logger(MatchingGateway.name);
   // Track online users per room: { roomId: Set<userId> }
   private roomUsers = new Map<string, Set<string>>();
-  constructor(private readonly matchingService: MatchingService) {}
+  constructor(
+    private readonly matchingService: MatchingService,
+    private readonly userService: UserService,
+  ) {}
 
   async handleConnection(client: AuthenticatedSocket) {
     // TODO: Extract userId from session cookie when auth is ready
@@ -200,5 +203,19 @@ export class MatchingGateway
         code: 'SWIPE_FAILED',
       });
     }
+  }
+
+  private parseCookies(cookieHeader?: string): Record<string, string> {
+    if (!cookieHeader) {
+      return {};
+    }
+    return cookieHeader.split(';').reduce(
+      (cookies, cookie) => {
+        const [name, value] = cookie.trim().split('=');
+        cookies[name] = value;
+        return cookies;
+      },
+      {} as Record<string, string>,
+    );
   }
 }
