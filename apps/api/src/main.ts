@@ -5,6 +5,7 @@ config();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -15,6 +16,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
+
+  // Cookie parser for AnonymousUserGuard (MVP v1)
+  app.use(cookieParser());
 
   // Global prefix
   app.setGlobalPrefix('api');
@@ -28,8 +32,11 @@ async function bootstrap() {
     }),
   );
 
-  // CORS
-  app.enableCors();
+  // CORS (allow credentials for cookies)
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

@@ -18,29 +18,35 @@ datasource db {
 model Media {
   id        String   @id @default(uuid())
   posterPath String  @map("poster_path")
-  poster    String?
   title     String
   tmdbId    String?  @map("tmdb_id")
   TMDBLink  String?  @map("tmdb_link")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   matches     RoomMatch[]
-
 }
 
 model User {
   id          String @id @default(uuid())
   hostedRooms Room[] @relation("HostRooms")
   guestRooms  Room[] @relation("GuestRooms")
-  name        String @unique
-  passwordHash  String    @map("password_hash")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  lastLoginAt   DateTime? @map("last_login_at")
 
+  // MVP v1: анонимные пользователи (name nullable)
+  // В v2: добавить email String? @unique для логина зарегистрированных
+  name        String?
+
+  // Флаг для различия анонимных и зарегистрированных пользователей
+  isAnonymous Boolean @default(true) @map("is_anonymous")
+
+  // В v2: добавить обратно для зарегистрированных пользователей:
+  // email         String?   @unique
+  // passwordHash  String?   @map("password_hash")
+  // lastLoginAt   DateTime? @map("last_login_at")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("users")
-
 }
 
 model Room {

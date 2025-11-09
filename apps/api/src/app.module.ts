@@ -6,14 +6,16 @@ import configuration from './config/configutation';
 
 import { PrismaModule } from './Prisma/prisma.module';
 import { RoomModule } from './room/room.module';
+import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
-import { RedisModule } from './redis/redis.module'; // ← добавить импорт
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
     PrismaModule,
+    RedisModule,
+    UserModule, // MVP v1: Анонимные пользователи
     RoomModule,
-    RedisModule, // ← добавить сюда
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],

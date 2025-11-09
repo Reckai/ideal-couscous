@@ -9,13 +9,4 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-
-  @Get('test-swipe')
-  async testSaveSwipe(): Promise<string> {
-    return this.appService.testSaveSwipe();
-  }
-  @Get('test-swipe2')
-  async getTestSwipe2(): Promise<string> {
-    return this.appService.getTestSwipe();
-  }
 }

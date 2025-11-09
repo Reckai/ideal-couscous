@@ -6,21 +6,22 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 
 import { RoomResponseDTO } from './dto/room-response.dto';
 import { RoomService } from './room.service';
-
-// import { AuthGuard } from '@/guards/auth.guard'; // TODO
-// import { CurrentUser } from '@/decorators/current-user.decorator'; // TODO
+import { AnonymousUserGuard } from '../common/guards/anonymous-user.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 /**
  * RoomController - HTTP endpoints для управления комнатами
  *
- * Все endpoints требуют аутентификацию (TODO: добавить AuthGuard)
+ * MVP v1: Все endpoints используют AnonymousUserGuard для автоматического создания/восстановления анонимных пользователей
+ * v2: Добавить AuthGuard для зарегистрированных пользователей
  */
 @Controller('rooms')
-// @UseGuards(AuthGuard) // TODO: Раскомментировать после реализации Auth
+@UseGuards(AnonymousUserGuard)
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
@@ -33,12 +34,9 @@ export class RoomController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createRoom() // @CurrentUser('id') userId: string, // TODO
-
-  : Promise<RoomResponseDTO> {
-    // TEMP: Hardcoded userId для тестирования (удалить после Auth)
-    const userId = 'temp-user-id-123';
-
+  async createRoom(
+    @CurrentUser('id') userId: string,
+  ): Promise<RoomResponseDTO> {
     return this.roomService.createRoom(userId);
   }
 
@@ -53,11 +51,8 @@ export class RoomController {
   @HttpCode(HttpStatus.OK)
   async joinRoom(
     @Param('code') code: string,
-    // @CurrentUser('id') userId: string, // TODO
+    @CurrentUser('id') userId: string,
   ): Promise<RoomResponseDTO> {
-    // TEMP: Hardcoded userId
-    const userId = 'temp-user-id-456';
-
     return this.roomService.joinRoom(userId, { inviteCode: code });
   }
 
@@ -71,11 +66,8 @@ export class RoomController {
   @Get(':roomId')
   async getRoomById(
     @Param('roomId') roomId: string,
-    // @CurrentUser('id') userId: string, // TODO
+    @CurrentUser('id') userId: string,
   ): Promise<RoomResponseDTO> {
-    // TEMP: Hardcoded userId
-    const userId = 'temp-user-id-123';
-
     return this.roomService.getRoomById(roomId, userId);
   }
 
@@ -93,15 +85,12 @@ export class RoomController {
   async submitSelections(
     @Param('roomId') roomId: string,
     @Body('mediaIds') mediaIds: string[],
-    // @CurrentUser('id') userId: string, // TODO
+    @CurrentUser('id') userId: string,
   ): Promise<{
     bothSelected: boolean;
     mediaPoolSize?: number;
     message: string;
   }> {
-    // TEMP: Hardcoded userId
-    const userId = 'temp-user-id-123';
-
     return this.roomService.submitSelections(roomId, userId, mediaIds);
   }
 
@@ -116,11 +105,8 @@ export class RoomController {
   @HttpCode(HttpStatus.OK)
   async markUserReady(
     @Param('roomId') roomId: string,
-    // @CurrentUser('id') userId: string, // TODO
+    @CurrentUser('id') userId: string,
   ): Promise<{ bothReady: boolean; message: string }> {
-    // TEMP: Hardcoded userId
-    const userId = 'temp-user-id-123';
-
     return this.roomService.markUserReady(roomId, userId);
   }
 
@@ -135,11 +121,8 @@ export class RoomController {
   @HttpCode(HttpStatus.OK)
   async startSwiping(
     @Param('roomId') roomId: string,
-    // @CurrentUser('id') userId: string, // TODO
+    @CurrentUser('id') userId: string,
   ): Promise<{ message: string }> {
-    // TEMP: Hardcoded userId
-    const userId = 'temp-user-id-123';
-
     await this.roomService.startSwiping(roomId, userId);
 
     return { message: 'Swiping started. Connect via WebSocket to begin.' };
@@ -156,11 +139,8 @@ export class RoomController {
   @HttpCode(HttpStatus.OK)
   async cancelRoom(
     @Param('roomId') roomId: string,
-    // @CurrentUser('id') userId: string, // TODO
+    @CurrentUser('id') userId: string,
   ): Promise<{ message: string }> {
-    // TEMP: Hardcoded userId
-    const userId = 'temp-user-id-123';
-
     await this.roomService.cancelRoom(roomId, userId);
 
     return { message: 'Room has been cancelled' };
