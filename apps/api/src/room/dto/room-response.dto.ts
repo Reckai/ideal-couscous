@@ -1,13 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RoomStatus } from 'generated/prisma';
 
-export class RoomUserDTO {
-  @ApiProperty({ example: 'uuid-here' })
-  id: string;
-  @ApiProperty({ example: 'Reckai' })
-  name: string;
-}
-
 export class RoomResponseDTO {
   @ApiProperty({ example: 'uuid-here' })
   id: string;

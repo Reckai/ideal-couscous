@@ -24,6 +24,8 @@ model Media {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   matches     RoomMatch[]
+  @@index([createdAt(sort: Desc), id])
+  @@map("media")
 }
 
 model User {

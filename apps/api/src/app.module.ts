@@ -9,6 +9,7 @@ import { RoomModule } from './room/room.module';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RedisModule } from './redis/redis.module';
       load: [configuration],
       cache: true,
     }),
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
