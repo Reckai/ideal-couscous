@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -38,7 +39,39 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const port = process.env.PORT || 3000;
+  // Swagger API Documentation (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Anime Tinder API')
+      .setDescription(
+        'REST API для Anime Tinder - приложения для совместного выбора аниме',
+      )
+      .setVersion('1.0')
+      .addTag('rooms', 'Управление комнатами')
+      .addTag('media', 'Каталог медиа контента')
+      .addCookieAuth('anonymousUserId', {
+        type: 'apiKey',
+        in: 'cookie',
+        description: 'Cookie с ID анонимного пользователя',
+      })
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true, // Сохранять авторизацию между перезагрузками
+        tagsSorter: 'alpha', // Сортировка тегов по алфавиту
+        operationsSorter: 'alpha', // Сортировка операций по алфавиту
+      },
+      customSiteTitle: 'Anime Tinder API Docs',
+    });
+
+    logger.log(
+      '📖 Swagger documentation available at http://localhost:4000/api/docs',
+    );
+  }
+
+  const port = process.env.PORT || 4000;
   await app.listen(port);
 
   logger.log(`✅ Application running on http://localhost:${port}/api`);
