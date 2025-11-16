@@ -1,0 +1,42 @@
+{
+  "HomePage": {
+    "title": "Find What to Watch",
+    "subtitle": "Together Tonight",
+    "tagline": "Stop the endless debate. Create a room, swipe through options together, and match on something you both love to watch.",
+    "createOrJoinRoom": "Create or Join Room",
+    "learnMore": "Learn More",
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Four simple steps to find your perfect watch together",
+      "steps": {
+        "createOrJoin": {
+          "title": "Create or Join",
+          "description": "One person creates a room, the other joins with a simple code or link"
+        },
+        "pickYourPicks": {
+          "title": "Pick Your Picks",
+          "description": "Each person selects shows or movies they'd like to watch tonight"
+        },
+        "swipeTogether": {
+          "title": "Swipe Together",
+          "description": "Swipe through the combined media pool and see what clicks"
+        },
+        "matchAndWatch": {
+          "title": "Match & Watch",
+          "description": "Get notified when you both pick the same title. Time to watch!"
+        }
+      }
+    },
+    "footer": {
+      "brand": "AniTinder",
+      "brandDescription": "Finding love in the little things. A pet project for couples who can't decide.",
+      "getInTouch": "Get in Touch",
+      "email": "Email",
+      "telegram": "Telegram",
+      "about": "About",
+      "aboutDescription": "AniTinder is a pet project born from real frustration—helping couples find consensus on what to watch, one swipe at a time.",
+      "madeWith": "Made with",
+      "forCouples": "for couples everywhere"
+    }
+  }
+}
