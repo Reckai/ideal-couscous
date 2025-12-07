@@ -54,3 +54,7 @@ export class ErrorDto {
   message: string;
   code?: string;
 }
+export class AddMediaDTO {
+  @IsString()
+  mediaId: string;
+}

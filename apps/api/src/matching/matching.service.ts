@@ -14,6 +14,8 @@ import { MatchingCacheRepository } from './repositories/matching-cache.repositor
 import { RoomStatus } from 'generated/prisma';
 import { MatchFoundDTO, SwipeAction } from './dto/swipes.dto';
 
+import { customAlphabet } from 'nanoid';
+import { WsException } from '@nestjs/websockets';
 @Injectable()
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
@@ -76,6 +78,62 @@ export class MatchingService {
     await this.roomRepo.updateStatus(roomId, RoomStatus.MATCHED);
     await this.roomCache.updateRoomStatus(roomId, RoomStatus.MATCHED);
     this.logger.log(`Room ${roomId} status updated to MATCHED`);
+  }
+  private readonly generateInviteCode = customAlphabet(
+    'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
+    6,
+  );
+  async createRoom(userId: string): Promise<string> {
+    const roomId = this.generateInviteCode();
+
+    try {
+      await this.roomCache.initRoom(roomId, userId);
+
+      return roomId;
+    } catch (error) {}
+  }
+
+  async removeUserFromRoom(roomId: string, userId: string) {
+    await this.roomCache.removeUserFromRoom(roomId, userId);
+  }
+
+  async addUserToRoom(roomId: string, userId: string): Promise<void> {
+    const roomExist = await this.roomCache.validateRoomExistense(roomId);
+
+    if (!roomExist) {
+      throw new NotFoundException(`Room with id ${roomId} not found`);
+    }
+    const userCount = await this.roomCache.getRoomUserCount(roomId);
+    if (userCount >= 2) {
+      throw new BadRequestException(`Room is full`);
+    }
+
+    await this.roomCache.addUserToRoom(roomId, userId);
+  }
+  async addMediaToDraft(
+    userId: string,
+    roomId: string,
+    mediaId: string,
+  ): Promise<boolean> {
+    const isMember = await this.roomCache.isUserInRoom(roomId, userId);
+    if (!isMember) {
+      throw new WsException('User is not member of the room');
+    }
+    const roomStatus = await this.roomCache.getRoomStatus(roomId);
+    if (roomStatus !== 'WAITING' && roomStatus !== 'SELECTING') {
+      throw new WsException('Cannot add items in current room state');
+    }
+
+    try {
+      const result = await this.roomCache.saveUserSelection(roomId, mediaId);
+
+      return result === 1;
+    } catch (e) {
+      if (e.message === 'Draft limit reached') {
+        throw new WsException('Deck limit reached (max 50)');
+      }
+      throw e;
+    }
   }
   async processSwipe(
     action: SwipeAction,

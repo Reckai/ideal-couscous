@@ -25,10 +25,10 @@ export class RoomCacheRepository {
   // Redis key patterns
   private readonly KEYS = {
     roomState: (roomId: string) => `room:${roomId}:state`,
-    userSelections: (roomId: string, userId: string) =>
-      `room:${roomId}:user:${userId}:selections`,
+    roomDraft: (roomId: string) => `room:${roomId}:draft`,
     mediaPool: (roomId: string) => `room:${roomId}:media_pool`,
     swipes: (roomId: string) => `room:${roomId}:swipes`,
+    users: (roomId: string) => `room:${roomId}:users`,
   };
 
   constructor(private readonly redis: RedisService) {}
@@ -40,19 +40,21 @@ export class RoomCacheRepository {
   /**
    * Инициализировать состояние комнаты
    */
-  async initRoomState(roomId: string, status: RoomStatus): Promise<void> {
+  async initRoom(roomId: string, hostId: string): Promise<void> {
     const key = this.KEYS.roomState(roomId);
     this.logger.debug(`Initializing room state: ${roomId}`);
 
     try {
-      // HSET принимает плоский объект или пары key-value
       await this.redis.hset(key, {
-        status,
+        status: RoomStatus.WAITING,
+        hostId,
         hostReady: 'false',
         guestReady: 'false',
-        currentMediaIndex: '0',
+        createdAt: Date.now(),
       });
       await this.redis.expire(key, this.ROOM_TTL);
+      await this.redis.sadd(this.KEYS.users(roomId), hostId);
+      await this.redis.expire(this.KEYS.users(roomId), this.ROOM_TTL);
     } catch (error) {
       this.logger.error(
         `Failed to init room state ${roomId}: ${error.message}`,
@@ -60,6 +62,25 @@ export class RoomCacheRepository {
       );
       throw error;
     }
+  }
+  async validateRoomExistense(roomId: string): Promise<boolean> {
+    const key = this.KEYS.roomState(roomId);
+    const exists = await this.redis.exists(key);
+    if (!exists) {
+      return false;
+    }
+    return true;
+  }
+  async getRoomUserCount(roomId: string): Promise<number> {
+    const key = this.KEYS.users(roomId);
+    const count = await this.redis.scard(key);
+    return count;
+  }
+
+  async isUserInRoom(roomId: string, userId: string): Promise<boolean> {
+    const key = this.KEYS.users(roomId);
+    const result = await this.redis.sismember(key, userId);
+    return result === 1;
   }
 
   /**
@@ -94,6 +115,13 @@ export class RoomCacheRepository {
       );
       throw error;
     }
+  }
+
+  async getRoomStatus(roomId: string): Promise<RoomStatus> {
+    return this.redis.hget(
+      this.KEYS.roomState(roomId),
+      'status',
+    ) as Promise<RoomStatus>;
   }
 
   /**
@@ -153,67 +181,55 @@ export class RoomCacheRepository {
   /**
    * Сохранить выборы пользователя
    */
-  async saveUserSelections(
-    roomId: string,
-    userId: string,
-    mediaIds: string[],
-  ): Promise<void> {
-    const key = this.KEYS.userSelections(roomId, userId);
-    this.logger.debug(
-      `Saving ${mediaIds.length} selections for user ${userId} in room ${roomId}`,
-    );
+  async saveUserSelection(roomId: string, mediaId: string): Promise<number> {
+    const key = this.KEYS.roomDraft(roomId);
+    this.logger.debug(`Saving ${mediaId} selections in room ${roomId}`);
 
-    try {
-      if (mediaIds.length === 0) {
-        return;
-      }
-
-      // SADD автоматически убирает дубликаты
-      await this.redis.sadd(key, ...mediaIds);
-      await this.redis.expire(key, this.ROOM_TTL);
-    } catch (error) {
-      this.logger.error(
-        `Failed to save user selections: ${error.message}`,
-        error.stack,
-      );
-      throw error;
+    const count = await this.redis.scard(key);
+    if (count > 50) {
+      throw new Error('Draft limit reached');
     }
+    // SADD автоматически убирает дубликаты
+    const result = await this.redis.sadd(key, mediaId);
+
+    await this.redis.expire(key, this.ROOM_TTL);
+    return result;
   }
 
   /**
    * Получить выборы пользователя
    */
-  async getUserSelections(roomId: string, userId: string): Promise<string[]> {
-    const key = this.KEYS.userSelections(roomId, userId);
-
-    try {
-      return await this.redis.smembers(key);
-    } catch (error) {
-      this.logger.error(
-        `Failed to get user selections: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
+  // async getUserSelections(roomId: string, userId: string): Promise<string[]> {
+  //   const key = this.KEYS.userSelections(roomId, userId);
+  //
+  //   try {
+  //     return await this.redis.smembers(key);
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `Failed to get user selections: ${error.message}`,
+  //       error.stack,
+  //     );
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Проверить сохранил ли пользователь выборы
    */
-  async hasUserSelections(roomId: string, userId: string): Promise<boolean> {
-    const key = this.KEYS.userSelections(roomId, userId);
-
-    try {
-      const count = await this.redis.scard(key);
-      return count > 0;
-    } catch (error) {
-      this.logger.error(
-        `Failed to check user selections: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
+  // async hasUserSelections(roomId: string, userId: string): Promise<boolean> {
+  //   const key = this.KEYS.userSelections(roomId, userId);
+  //
+  //   try {
+  //     const count = await this.redis.scard(key);
+  //     return count > 0;
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `Failed to check user selections: ${error.message}`,
+  //       error.stack,
+  //     );
+  //     throw error;
+  //   }
+  // }
 
   // ============================================================================
   // MEDIA POOL OPERATIONS
@@ -266,6 +282,17 @@ export class RoomCacheRepository {
     }
   }
 
+  async removeUserFromRoom(roomId: string, userId: string): Promise<void> {
+    const key = this.KEYS.users(roomId);
+    await this.redis.srem(key, userId);
+  }
+
+  async addUserToRoom(roomId: string, userId: string): Promise<void> {
+    const key = this.KEYS.users(roomId);
+    await this.redis.sadd(key, userId);
+    await this.redis.expire(key, this.ROOM_TTL);
+  }
+
   /**
    * Получить размер media pool
    */
@@ -290,24 +317,16 @@ export class RoomCacheRepository {
   /**
    * Удалить все данные комнаты
    */
-  async deleteRoomData(
-    roomId: string,
-    hostId: string,
-    guestId?: string,
-  ): Promise<void> {
+  async deleteRoomData(roomId: string): Promise<void> {
     this.logger.debug(`Deleting all Redis data for room ${roomId}`);
 
     try {
       const keys = [
         this.KEYS.roomState(roomId),
-        this.KEYS.userSelections(roomId, hostId),
+        this.KEYS.roomDraft(roomId),
         this.KEYS.mediaPool(roomId),
         this.KEYS.swipes(roomId),
       ];
-
-      if (guestId) {
-        keys.push(this.KEYS.userSelections(roomId, guestId));
-      }
 
       await this.redis.del(...keys);
       this.logger.log(`Deleted ${keys.length} keys for room ${roomId}`);
@@ -323,22 +342,14 @@ export class RoomCacheRepository {
   /**
    * Продлить TTL всех ключей комнаты
    */
-  async refreshRoomTTL(
-    roomId: string,
-    hostId: string,
-    guestId?: string,
-  ): Promise<void> {
+  async refreshRoomTTL(roomId: string): Promise<void> {
     try {
       const keys = [
         this.KEYS.roomState(roomId),
-        this.KEYS.userSelections(roomId, hostId),
+        this.KEYS.roomDraft(roomId),
         this.KEYS.mediaPool(roomId),
         this.KEYS.swipes(roomId),
       ];
-
-      if (guestId) {
-        keys.push(this.KEYS.userSelections(roomId, guestId));
-      }
 
       await Promise.all(
         keys.map((key) => this.redis.expire(key, this.ROOM_TTL)),

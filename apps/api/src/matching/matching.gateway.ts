@@ -1,29 +1,23 @@
+import { Server, Socket } from 'socket.io';
 import {
-  WebSocketGateway,
-  SubscribeMessage,
   MessageBody,
-  ConnectedSocket,
-  WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Socket, Server } from 'socket.io';
-import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
-import {
-  ErrorDto,
-  SwipeDTO,
-  SwipeResponseDTO,
-  UserStatusDto,
-} from './dto/swipes.dto';
-
+import { Logger } from '@nestjs/common';
 import { MatchingService } from './matching.service';
+import cookieParser from 'cookie-parser';
+import { v4 as uuidv4 } from 'uuid';
 import { JoinRoomDTO } from './dto/join-room.dto';
-import { UserService } from '../user';
-
-// For now, we'll pass userId in the connection query params
+import { AddMediaDTO } from './dto/swipes.dto';
 interface AuthenticatedSocket extends Socket {
-  userId?: string;
-  roomId?: string;
+  data: {
+    userId: string;
+    roomId?: string;
+  };
 }
 
 @WebSocketGateway({
@@ -40,229 +34,152 @@ export class MatchingGateway
   server: Server;
 
   private readonly logger = new Logger(MatchingGateway.name);
-  // Track online users per room: { roomId: Set<userId> }
-  private roomUsers = new Map<string, Set<string>>();
-  constructor(
-    private readonly matchingService: MatchingService,
-    private readonly userService: UserService,
-  ) {}
 
-  async handleConnection(client: AuthenticatedSocket) {
+  constructor(private readonly matchingService: MatchingService) {}
+
+  handleConnection(client: AuthenticatedSocket) {
     try {
-      const cookies = this.parseCookies(client.handshake.headers.cookie);
-      const cookieUserId = cookies?.anonymousUserId;
+      const rawCookies = client.handshake.headers.cookie;
+      const cookies = cookieParser(rawCookies);
 
-      let userId;
-      if (cookieUserId) {
-        this.logger.debug(`WebSocket: Found cookie userId: ${cookieUserId}`);
-        const user = await this.userService.getOrCreateUser(cookieUserId);
-        userId = user.id;
-        if (user.id !== cookieUserId) {
-          this.logger.warn(
-            `WebSocket: Cookie userId ${cookieUserId} not found, created new user ${user.id}`,
-          );
-        }
+      let userId = cookies['anonymousUserId'];
+      let isNew = false;
+      if (!userId) {
+        userId = uuidv4();
+        isNew = true;
+        this.logger.debug(`New user connected: ${userId}`);
       } else {
-        // No cookie - create new anonymous user
-        this.logger.debug('WebSocket: No cookie found, creating new user');
-        const user = await this.userService.createAnonymousUser();
-        userId = user.id;
+        this.logger.debug(`User connected: ${userId}`);
       }
-      // Attach userId to socket
-      client.userId = userId;
-      this.logger.log(`WebSocket connected: ${client.id} (user: ${userId})`);
-
-      // Send userId back to client (so they can store it)
-      client.emit('authenticated', { userId });
-    } catch (err) {
-      this.logger.error(
-        `WebSocket connection error: ${err.message}`,
-        err.stack,
-      );
-      client.emit('error', {
-        message: 'Authentication failed',
-        code: 'AUTH_FAILED',
-      } as ErrorDto);
+      client.data.userId = userId;
+      client.emit('connection_established', { userId, isNew });
+    } catch (e) {
+      this.logger.error(`Failed to handle connection: ${e.message}`, e.stack);
       client.disconnect();
     }
   }
-  async handleDisconnect(client: AuthenticatedSocket) {
-    const { userId, roomId } = client;
-    this.logger.log(
-      `Client disconnected: ${client.id} (user: ${userId}, room: ${roomId})`,
-    );
 
-    if (roomId && userId) {
-      const roomUsers = this.roomUsers.get(roomId);
-      if (roomUsers) {
-        this.roomUsers.delete(userId);
-        client.to(roomId).emit('user_left', {
-          userId,
-          status: 'offline',
-        } as UserStatusDto);
-        await this.matchingService
-          .handleUserDisconnect(roomId, userId)
-          .catch((err) => {
-            this.logger.error(
-              `Error handling disconnect: ${err.message}`,
-              err.stack,
-            );
-          });
-        if (roomUsers.size === 0) {
-          this.roomUsers.delete(roomId);
-        }
-      }
+  handleDisconnect(client: AuthenticatedSocket) {
+    const { userId, roomId } = client.data;
+    if (roomId) {
+      this.logger.log(`User ${userId} disconnected from room ${roomId}`);
+      this.matchingService.removeUserFromRoom(roomId, userId);
+      this.server.to(roomId).emit('user_left', { userId });
     }
   }
+
+  @SubscribeMessage('create_room')
+  async createRoom(client: AuthenticatedSocket) {
+    const { userId } = client.data;
+
+    if (!userId) {
+      this.logger.error('User is not authenticated');
+      client.disconnect();
+      return;
+    }
+    try {
+      const inviteCode = await this.matchingService.createRoom(userId);
+      await client.join(inviteCode);
+      client.data.roomId = inviteCode;
+      client.emit('room_created', {
+        userId,
+        status: 'online',
+        inviteCode,
+      });
+      this.logger.log(`Stateless User ${userId} created room ${inviteCode}`);
+    } catch (error) {
+      this.logger.error(`Create room error: ${error.message}`);
+      client.emit('error', {
+        message: 'Failed to create room',
+        code: 'CREATE_ROOM_FAILED',
+      });
+    }
+  }
+
   @SubscribeMessage('join_room')
-  @UsePipes(new ValidationPipe({ transform: true }))
   async handleJoinRoom(
-    @ConnectedSocket() client: AuthenticatedSocket,
+    client: AuthenticatedSocket,
     @MessageBody() data: JoinRoomDTO,
   ) {
-    const { userId } = client;
-    const { roomId } = data;
+    const { userId } = client.data;
     if (!userId) {
-      client.emit('error', {
-        message: 'Not authenticated',
-        code: 'NOT_AUTHENTICATED',
-      } as ErrorDto);
+      this.logger.error(`User ${userId} is not authenticated`);
+      client.disconnect();
       return;
     }
+    if (!data?.roomId) {
+      client.emit('error', {
+        message: 'Room ID is required',
+        code: 'INVALID_PAYLOAD',
+      });
+      return;
+    }
+
+    const newRoomId = data.roomId;
+    const currentRoomId = client.data.roomId;
 
     try {
-      const room = await this.matchingService.validateRoomStatus(roomId);
-      this.matchingService.validateUserMembership(room, userId);
-
-      await client.join(roomId);
-      client.roomId = roomId;
-
-      if (!this.roomUsers.has(roomId)) {
-        this.roomUsers.set(roomId, new Set());
-        this.roomUsers.get(roomId)!.add(userId!);
-
-        this.logger.log(`User ${userId} joined room ${roomId}`);
-
-        const mediaPool = await this.matchingService.getMediaPoolWithDetails(
-          room.id,
-        );
-
-        // Notify others in room
-        client.to(roomId).emit('user_joined', {
-          userId,
-          status: 'online',
-        });
-
-        // Send media pool to the user who just joined
-        client.emit('room_joined', {
-          roomId,
-          mediaPool,
-          message: 'Successfully joined room',
-        });
+      if (currentRoomId === newRoomId) {
+        this.logger.debug(`User ${userId} already in room ${newRoomId}`);
+        return;
       }
-    } catch (err) {
-      this.logger.error(`Error joining room: ${err.message}`, err.stack);
-      client.emit('error', {
-        message: err.message,
-        code: 'JOIN_FAILED',
-      } as ErrorDto);
-    }
-  }
-
-  @SubscribeMessage('leave_room')
-  async handleLeaveRoom(@ConnectedSocket() client: AuthenticatedSocket) {
-    const { userId, roomId } = client;
-
-    if (!roomId) {
-      return;
-    }
-    this.logger.log(`User ${userId} leaving room ${roomId}`);
-
-    const roomUsers = this.roomUsers.get(roomId);
-    if (roomUsers) {
-      roomUsers.delete(userId!);
-    }
-
-    client.to(roomId).emit('user_left', {
-      userId,
-      status: 'offline',
-    } as UserStatusDto);
-
-    await client.leave(roomId);
-    client.roomId = undefined;
-
-    await this.matchingService
-      .handleUserDisconnect(roomId, userId!)
-      .catch((err) => {
-        this.logger.error(
-          `Error handling leave room: ${err.message}`,
-          err.stack,
+      if (currentRoomId) {
+        this.logger.log(
+          `User ${userId} switching: ${currentRoomId} -> ${newRoomId}`,
         );
+        await this.matchingService.removeUserFromRoom(currentRoomId, userId);
+        await client.leave(currentRoomId);
+        this.server.to(currentRoomId).emit('user_left', { userId });
+      }
+      await this.matchingService.addUserToRoom(newRoomId, userId);
+      await client.join(newRoomId);
+      client.data.roomId = newRoomId;
+      client.emit('room_joined', {
+        userId,
+        status: 'online',
+        roomId: newRoomId,
       });
+      this.logger.log(`User ${userId} joined room ${newRoomId}`);
+      this.server.to(newRoomId).emit('user_joined', { userId });
+    } catch (error) {
+      this.logger.error(`Join room error for ${userId}: ${error.message}`);
+
+      client.emit('error', {
+        message: error.message || 'Failed to join room',
+        code: 'JOIN_ROOM_FAILED',
+      });
+    }
   }
 
-  @SubscribeMessage('swipe')
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async handleSwipe(
-    @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: SwipeDTO,
+  @SubscribeMessage('add_anime')
+  async handleAddAnime(
+    client: AuthenticatedSocket,
+    @MessageBody() data: AddMediaDTO,
   ) {
-    const { userId, roomId } = client;
-    const { mediaId, action } = data;
-    if (!userId) {
+    const { userId, roomId } = client.data;
+    if (!data.mediaId) {
       client.emit('error', {
-        message: 'Not authenticated',
-        code: 'NOT_AUTHENTICATED',
-      } as ErrorDto);
-      return;
-    }
-
-    if (!roomId) {
-      client.emit('error', {
-        message: 'You must join a room first',
-        code: 'NOT_IN_ROOM',
-      } as ErrorDto);
-      return;
-    }
-    try {
-      const result = await this.matchingService.processSwipe(
-        action,
-        userId,
-        roomId,
-        mediaId,
-      );
-
-      client.emit('swipe_received', {
-        userId,
-        roomId,
-        action,
-        mediaId,
-      } as SwipeResponseDTO);
-
-      if (result.isMatch) {
-        this.server.to(roomId).emit('match_found', result.matchData);
-        this.logger.log(`Match emitted to room ${roomId}`);
-      }
-    } catch (err) {
-      this.logger.error(`Error processing swipe: ${err.message}`, err.stack);
-      client.emit('error', {
-        message: err.message,
-        code: 'SWIPE_FAILED',
+        message: 'Media Id not provided',
+        code: 'ID_NOT_PROVIDED',
       });
     }
-  }
-
-  private parseCookies(cookieHeader?: string): Record<string, string> {
-    if (!cookieHeader) {
-      return {};
+    try {
+      const isAdded = await this.matchingService.addMediaToDraft(
+        roomId,
+        userId,
+        data.mediaId,
+      );
+      if (isAdded) {
+        this.server.to(roomId).emit('anime_added', {
+          mediaId: data.mediaId,
+          addedBy: userId, // Чтобы фронт мог написать "Вася добавил..."
+        });
+        this.logger.log(`Anime ${data.mediaId} added to room ${roomId}`);
+      } else {
+        client.emit('info', { message: 'Already in deck' });
+      }
+    } catch (e) {
+      client.emit('error', { message: e.message });
     }
-    return cookieHeader.split(';').reduce(
-      (cookies, cookie) => {
-        const [name, value] = cookie.trim().split('=');
-        cookies[name] = value;
-        return cookies;
-      },
-      {} as Record<string, string>,
-    );
   }
 }
