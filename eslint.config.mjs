@@ -83,6 +83,7 @@ export default antfu({
     // NestJS uses decorators and class-based approach
     'ts/no-extraneous-class': 'off',
     'new-cap': 'off',
+    'dot-notation': 'off',
     // Allow empty constructors for DI
     'ts/no-empty-function': ['error', { allow: ['constructors'] }],
   },
@@ -92,5 +93,6 @@ export default antfu({
   rules: {
     'ts/no-explicit-any': 'off',
     'no-console': 'off',
+
   },
 })

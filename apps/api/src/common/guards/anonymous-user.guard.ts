@@ -67,7 +67,7 @@ export class AnonymousUserGuard implements CanActivate {
     }
 
     // Сохраняем пользователя в request для доступа через декоратор
-    request.user = user
+    request['user'] = user
 
     // Устанавливаем/обновляем cookie
     response.cookie(ANONYMOUS_USER_COOKIE, user.id, {
