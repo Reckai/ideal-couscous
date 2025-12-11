@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { MatchingService } from './matching.service';
-import cookieParser from 'cookie-parser';
+import { parse as parseCookies } from 'cookie';
 import { v4 as uuidv4 } from 'uuid';
 import { JoinRoomDTO } from './dto/join-room.dto';
 import { AddMediaDTO } from './dto/swipes.dto';
@@ -39,8 +39,8 @@ export class MatchingGateway
 
   handleConnection(client: AuthenticatedSocket) {
     try {
-      const rawCookies = client.handshake.headers.cookie;
-      const cookies = cookieParser(rawCookies);
+      const rawCookies = client.handshake.headers.cookie || '';
+      const cookies = parseCookies(rawCookies);
 
       let userId = cookies['anonymousUserId'];
       let isNew = false;

@@ -6,10 +6,11 @@ import configuration from './config/configutation';
 
 import { PrismaModule } from './Prisma/prisma.module';
 import { RoomModule } from './room/room.module';
-import { UserModule } from './user/user.module';
+import { UserModule } from './user';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
 import { MediaModule } from './media/media.module';
+import { MatchingModule } from './matching/matching.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MediaModule } from './media/media.module';
       cache: true,
     }),
     MediaModule,
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

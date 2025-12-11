@@ -6,6 +6,7 @@ import {locales, routing} from '@/i18n/routing';
 import { Analytics } from '@vercel/analytics/next'
 import '../globals.css'
 import { Geist } from "next/font/google";
+import {SocketProvider} from "@/providers/SocketProvider";
 
 
 const geist = Geist({ subsets: ["latin"] })
@@ -68,7 +69,7 @@ export default async function RootLayout({
         <html lang={locale} className={`dark ${geist.className}`}>
         <body className={`font-sans antialiased`}>
         <NextIntlClientProvider messages={messages}>
-            {children}
+            <SocketProvider>{children}</SocketProvider>
         </NextIntlClientProvider>
         <Analytics />
         </body>

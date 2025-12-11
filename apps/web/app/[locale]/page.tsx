@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import {ROUTES} from "@/lib/routes";
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import DisplaySocketState from "@/components/DisplayIsSocketConnect";
 
 
 export default function Home() {
@@ -42,7 +43,7 @@ export default function Home() {
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                         {t('tagline')}
                     </p>
-
+                    <DisplaySocketState/>
                     {/* CTA Button */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                         <Link
