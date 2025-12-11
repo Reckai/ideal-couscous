@@ -1,10 +1,10 @@
 'use client'
-import type { Socket } from 'socket.io-client'
+import type { TypedSocket } from '@/providers/socket'
 import React, { createContext, use, useEffect, useState } from 'react'
 import { socket } from '@/providers/socket'
 
 interface SocketContextType {
-  socket: Socket | null
+  socket: TypedSocket | null
   isConnected: boolean
   connectionError: Error | null
 }
@@ -26,7 +26,7 @@ export function useSocket() {
 export function SocketProvider({ children}: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false)
   const [connectionError, setConnectionError] = useState<Error | null>(null)
-  console.log(process.env.NEXT_PUBLIC_WS_URL)
+
   useEffect(() => {
     const onConnect = () => {
       setIsConnected(true)

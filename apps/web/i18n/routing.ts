@@ -15,6 +15,7 @@ export const routing = defineRouting({
   pathnames: {
     '/': '/',
     '/room': '/room',
+    '/room/[inviteCode]': '/room/[inviteCode]',
   },
 })
 
