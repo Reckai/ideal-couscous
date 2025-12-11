@@ -6,6 +6,10 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
     "module": "commonjs",
+    "paths": {
+      "@shared/*": ["../../packages/shared/src/*"],
+      "@shared": ["../../packages/shared/src"]
+    },
     "strictBindCallApply": false,
     "strictNullChecks": false,
     "noFallthroughCasesInSwitch": false,
