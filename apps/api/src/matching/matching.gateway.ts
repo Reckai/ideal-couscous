@@ -2,11 +2,19 @@ import type {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets'
+import type {
+  AckCallback,
+  AnimeAddedData,
+  ClientToServerEvents,
+  InterServerEvents,
+  RoomData,
+  ServerToClientEvents,
+  SocketData,
+} from '@shared'
 import type { Server, Socket } from 'socket.io'
-import type { JoinRoomDTO } from './dto/join-room.dto'
-import type { AddMediaDTO } from './dto/swipes.dto'
 import { Logger } from '@nestjs/common'
 import {
+  ConnectedSocket,
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
@@ -16,12 +24,8 @@ import { parse as parseCookies } from 'cookie'
 import { v4 as uuidv4 } from 'uuid'
 import { MatchingService } from './matching.service'
 
-interface AuthenticatedSocket extends Socket {
-  data: {
-    userId: string
-    roomId?: string
-  }
-}
+type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
+type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 
 @WebSocketGateway({
   cors: {
@@ -33,13 +37,13 @@ interface AuthenticatedSocket extends Socket {
 export class MatchingGateway
 implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server
+  server: TypedServer
 
   private readonly logger = new Logger(MatchingGateway.name)
 
   constructor(private readonly matchingService: MatchingService) {}
 
-  handleConnection(client: AuthenticatedSocket) {
+  handleConnection(client: TypedSocket) {
     try {
       const rawCookies = client.handshake.headers.cookie || ''
       const cookies = parseCookies(rawCookies)
@@ -61,7 +65,7 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: AuthenticatedSocket) {
+  handleDisconnect(client: TypedSocket) {
     const { userId, roomId } = client.data
     if (roomId) {
       this.logger.log(`User ${userId} disconnected from room ${roomId}`)
@@ -71,48 +75,64 @@ implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('create_room')
-  async createRoom(client: AuthenticatedSocket) {
+  async handleCreateRoom(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() callback: AckCallback<RoomData>,
+  ) {
     const { userId } = client.data
 
     if (!userId) {
       this.logger.error('User is not authenticated')
+      callback({
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      })
       client.disconnect()
       return
     }
+
     try {
       const inviteCode = await this.matchingService.createRoom(userId)
       await client.join(inviteCode)
       client.data.roomId = inviteCode
-      client.emit('room_created', {
-        userId,
-        status: 'online',
-        inviteCode,
+
+      this.logger.log(`User ${userId} created room ${inviteCode}`)
+
+      callback({
+        success: true,
+        data: { userId, status: 'online', inviteCode },
       })
-      this.logger.log(`Stateless User ${userId} created room ${inviteCode}`)
     } catch (error) {
       this.logger.error(`Create room error: ${error.message}`)
-      client.emit('error', {
-        message: 'Failed to create room',
-        code: 'CREATE_ROOM_FAILED',
+      callback({
+        success: false,
+        error: { message: 'Failed to create room', code: 'CREATE_ROOM_FAILED' },
       })
     }
   }
 
   @SubscribeMessage('join_room')
   async handleJoinRoom(
-    client: AuthenticatedSocket,
-    @MessageBody() data: JoinRoomDTO,
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { roomId: string },
+    @MessageBody() callback: AckCallback<RoomData>,
   ) {
     const { userId } = client.data
+
     if (!userId) {
-      this.logger.error(`User ${userId} is not authenticated`)
+      this.logger.error('User is not authenticated')
+      callback({
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      })
       client.disconnect()
       return
     }
+
     if (!data?.roomId) {
-      client.emit('error', {
-        message: 'Room ID is required',
-        code: 'INVALID_PAYLOAD',
+      callback({
+        success: false,
+        error: { message: 'Room ID is required', code: 'INVALID_PAYLOAD' },
       })
       return
     }
@@ -123,65 +143,102 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       if (currentRoomId === newRoomId) {
         this.logger.debug(`User ${userId} already in room ${newRoomId}`)
+        callback({
+          success: true,
+          data: { userId, status: 'online', inviteCode: newRoomId },
+        })
         return
       }
+
       if (currentRoomId) {
-        this.logger.log(
-          `User ${userId} switching: ${currentRoomId} -> ${newRoomId}`,
-        )
+        this.logger.log(`User ${userId} switching: ${currentRoomId} -> ${newRoomId}`)
         await this.matchingService.removeUserFromRoom(currentRoomId, userId)
         await client.leave(currentRoomId)
         this.server.to(currentRoomId).emit('user_left', { userId })
       }
+
       await this.matchingService.addUserToRoom(newRoomId, userId)
       await client.join(newRoomId)
       client.data.roomId = newRoomId
-      client.emit('room_joined', {
-        userId,
-        status: 'online',
-        roomId: newRoomId,
-      })
+
       this.logger.log(`User ${userId} joined room ${newRoomId}`)
+
+      // Notify others in the room
       this.server.to(newRoomId).emit('user_joined', { userId })
+
+      callback({
+        success: true,
+        data: { userId, status: 'online', inviteCode: newRoomId },
+      })
     } catch (error) {
       this.logger.error(`Join room error for ${userId}: ${error.message}`)
-
-      client.emit('error', {
-        message: error.message || 'Failed to join room',
-        code: 'JOIN_ROOM_FAILED',
+      callback({
+        success: false,
+        error: { message: error.message || 'Failed to join room', code: 'JOIN_ROOM_FAILED' },
       })
     }
   }
 
   @SubscribeMessage('add_anime')
   async handleAddAnime(
-    client: AuthenticatedSocket,
-    @MessageBody() data: AddMediaDTO,
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { mediaId: string },
+    @MessageBody() callback: AckCallback<AnimeAddedData>,
   ) {
     const { userId, roomId } = client.data
-    if (!data.mediaId) {
-      client.emit('error', {
-        message: 'Media Id not provided',
-        code: 'ID_NOT_PROVIDED',
+
+    if (!userId) {
+      callback({
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
       })
+      return
     }
+
+    if (!roomId) {
+      callback({
+        success: false,
+        error: { message: 'User is not in a room', code: 'NOT_IN_ROOM' },
+      })
+      return
+    }
+
+    if (!data?.mediaId) {
+      callback({
+        success: false,
+        error: { message: 'Media ID is required', code: 'INVALID_PAYLOAD' },
+      })
+      return
+    }
+
     try {
       const isAdded = await this.matchingService.addMediaToDraft(
         roomId,
         userId,
         data.mediaId,
       )
+
       if (isAdded) {
-        this.server.to(roomId).emit('anime_added', {
-          mediaId: data.mediaId,
-          addedBy: userId, // Чтобы фронт мог написать "Вася добавил..."
-        })
+        const animeData: AnimeAddedData = { mediaId: data.mediaId, addedBy: userId }
+
+        // Broadcast to all in the room (including sender)
+        this.server.to(roomId).emit('anime_added', animeData)
+
         this.logger.log(`Anime ${data.mediaId} added to room ${roomId}`)
+
+        callback({ success: true, data: animeData })
       } else {
-        client.emit('info', { message: 'Already in deck' })
+        callback({
+          success: false,
+          error: { message: 'Anime already in deck', code: 'ALREADY_EXISTS' },
+        })
       }
     } catch (e) {
-      client.emit('error', { message: e.message })
+      this.logger.error(`Add anime error: ${e.message}`)
+      callback({
+        success: false,
+        error: { message: e.message || 'Failed to add anime', code: 'ADD_ANIME_FAILED' },
+      })
     }
   }
 }
