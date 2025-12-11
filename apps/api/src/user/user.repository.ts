@@ -1,6 +1,6 @@
 import type { User } from 'generated/prisma'
-import type { PrismaService } from '../Prisma/prisma.service'
 import { Injectable, Logger } from '@nestjs/common'
+import { PrismaService } from '../Prisma/prisma.service'
 
 /**
  * UserRepository - работа с пользователями в PostgreSQL

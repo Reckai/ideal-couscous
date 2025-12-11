@@ -3,11 +3,11 @@ import type {
   ExecutionContext,
 } from '@nestjs/common'
 import type { Request, Response } from 'express'
-import type { UserService } from '../../user'
 import {
   Injectable,
   Logger,
 } from '@nestjs/common'
+import { UserService } from '../../user'
 
 /**
  * Cookie для хранения ID анонимного пользователя

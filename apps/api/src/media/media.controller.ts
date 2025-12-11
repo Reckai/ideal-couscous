@@ -1,6 +1,6 @@
 import type { MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
-import type { MediaService } from './media.service'
 import { Controller, Get, Param, Query } from '@nestjs/common'
+import { MediaService } from './media.service'
 
 @Controller('media')
 export class MediaController {

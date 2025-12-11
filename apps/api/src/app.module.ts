@@ -14,15 +14,15 @@ import { UserModule } from './user'
 
 @Module({
   imports: [
-    PrismaModule,
-    RedisModule,
-    UserModule, // MVP v1: Анонимные пользователи
-    RoomModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
       cache: true,
     }),
+    PrismaModule,
+    RedisModule,
+    UserModule, // MVP v1: Анонимные пользователи
+    RoomModule,
     MediaModule,
     MatchingModule,
   ],

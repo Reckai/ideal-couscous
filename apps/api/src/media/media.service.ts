@@ -1,7 +1,7 @@
 import type { MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
-import type { MediaRepository } from './repositories/media.repository'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { MediaDto } from './dto/media.dto'
+import { MediaRepository } from './repositories/media.repository'
 
 @Injectable()
 export class MediaService {

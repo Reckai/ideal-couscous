@@ -84,6 +84,7 @@ export default antfu({
     'ts/no-extraneous-class': 'off',
     'new-cap': 'off',
     'dot-notation': 'off',
+    'ts/consistent-type-imports': 'off',
     // Allow empty constructors for DI
     'ts/no-empty-function': ['error', { allow: ['constructors'] }],
   },

@@ -1,6 +1,6 @@
-import type { RedisService } from '../../redis/redis.service'
 import type { SwipeAction } from '../dto/swipes.dto'
 import { Injectable, Logger } from '@nestjs/common'
+import { RedisService } from '../../redis/redis.service'
 
 @Injectable()
 export class MatchingCacheRepository {

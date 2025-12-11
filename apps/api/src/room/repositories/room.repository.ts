@@ -1,7 +1,7 @@
 import type { Room } from 'generated/prisma'
-import type { PrismaService } from '../../Prisma/prisma.service'
 import { Injectable, Logger } from '@nestjs/common'
 import { $Enums, Prisma } from 'generated/prisma'
+import { PrismaService } from '../../Prisma/prisma.service'
 import RoomStatus = $Enums.RoomStatus
 
 export type RoomWithRelations = Prisma.RoomGetPayload<{

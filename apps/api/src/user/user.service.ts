@@ -1,6 +1,6 @@
 import type { User } from 'generated/prisma'
-import type { UserRepository } from './user.repository'
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { UserRepository } from './user.repository'
 
 /**
  * UserService - бизнес-логика для работы с пользователями

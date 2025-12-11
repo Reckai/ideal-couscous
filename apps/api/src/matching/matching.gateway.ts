@@ -5,7 +5,6 @@ import type {
 import type { Server, Socket } from 'socket.io'
 import type { JoinRoomDTO } from './dto/join-room.dto'
 import type { AddMediaDTO } from './dto/swipes.dto'
-import type { MatchingService } from './matching.service'
 import { Logger } from '@nestjs/common'
 import {
   MessageBody,
@@ -15,6 +14,7 @@ import {
 } from '@nestjs/websockets'
 import { parse as parseCookies } from 'cookie'
 import { v4 as uuidv4 } from 'uuid'
+import { MatchingService } from './matching.service'
 
 interface AuthenticatedSocket extends Socket {
   data: {

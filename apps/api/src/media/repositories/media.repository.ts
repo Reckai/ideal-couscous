@@ -1,7 +1,7 @@
 import type { Media, Prisma } from 'generated/prisma'
-import type { PrismaService } from '../../Prisma/prisma.service'
 import type { MediaQueryDto } from '../dto/media.dto'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
+import { PrismaService } from '../../Prisma/prisma.service'
 
 import { DEFAULT_LIMIT, MAX_LIMIT, MIN_LIMIT } from '../consts'
 

@@ -1,15 +1,13 @@
 // apps/api/src/redis/redis.service.ts
 
-import type {
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common'
-import type { ConfigService } from '@nestjs/config'
+import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import type { RedisOptions } from 'ioredis'
 import {
   Injectable,
   Logger,
+
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import Redis from 'ioredis'
 
 /**

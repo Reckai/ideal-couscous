@@ -1,11 +1,5 @@
-import type { PrismaService } from '../Prisma/prisma.service'
-import type {
-  RoomCacheRepository,
-  RoomRepository,
-  RoomWithRelations,
-} from '../room/repositories'
+import type { RoomWithRelations } from '../room/repositories'
 import type { MatchFoundDTO } from './dto/swipes.dto'
-import type { MatchingCacheRepository } from './repositories/matching-cache.repository'
 import {
   BadRequestException,
   Injectable,
@@ -13,10 +7,16 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
-
 import { RoomStatus } from 'generated/prisma'
 import { customAlphabet } from 'nanoid'
+import { PrismaService } from '../Prisma/prisma.service'
+
+import {
+  RoomCacheRepository,
+  RoomRepository,
+} from '../room/repositories'
 import { SwipeAction } from './dto/swipes.dto'
+import { MatchingCacheRepository } from './repositories/matching-cache.repository'
 
 @Injectable()
 export class MatchingService {
@@ -105,7 +105,7 @@ export class MatchingService {
   }
 
   async addUserToRoom(roomId: string, userId: string): Promise<void> {
-    const roomExist = await this.roomCache.validateRoomExistense(roomId)
+    const roomExist = await this.roomCache.validateRoomExistence(roomId)
 
     if (!roomExist) {
       throw new NotFoundException(`Room with id ${roomId} not found`)

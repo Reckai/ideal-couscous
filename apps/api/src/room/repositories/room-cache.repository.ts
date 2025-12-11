@@ -1,8 +1,8 @@
 // apps/api/src/modules/room/repositories/room-cache.repository.ts
 
-import type { RedisService } from 'src/redis/redis.service'
 import { Injectable, Logger } from '@nestjs/common'
 import { RoomStatus } from 'generated/prisma'
+import { RedisService } from '../../redis/redis.service'
 
 /**
  * Структура состояния комнаты в Redis
@@ -64,13 +64,10 @@ export class RoomCacheRepository {
     }
   }
 
-  async validateRoomExistense(roomId: string): Promise<boolean> {
+  async validateRoomExistence(roomId: string): Promise<boolean> {
     const key = this.KEYS.roomState(roomId)
     const exists = await this.redis.exists(key)
-    if (!exists) {
-      return false
-    }
-    return true
+    return Boolean(exists)
   }
 
   async getRoomUserCount(roomId: string): Promise<number> {
