@@ -184,14 +184,14 @@ RedisModule.forRoot({
     port: 6379,
     password: process.env.REDIS_PASSWORD,
   },
-});
+})
 
 // Node Redis
 const redis = new Redis({
   host: 'localhost',
   port: 6379,
   password: process.env.REDIS_PASSWORD,
-});
+})
 ```
 
 ---

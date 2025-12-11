@@ -1,1 +1,1 @@
-export * from './anonymous-user.guard';
+export * from './anonymous-user.guard'

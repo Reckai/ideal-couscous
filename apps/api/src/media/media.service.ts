@@ -1,13 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { MediaRepository } from './repositories/media.repository';
-import { MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto';
+import type { MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
+import type { MediaRepository } from './repositories/media.repository'
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { MediaDto } from './dto/media.dto'
 
 @Injectable()
 export class MediaService {
   constructor(private readonly mediaRepository: MediaRepository) {}
 
   async findAll(query: MediaQueryDto): Promise<MediaListResponseDto> {
-    const result = await this.mediaRepository.findAllWithCursor(query);
+    const result = await this.mediaRepository.findAllWithCursor(query)
     return {
       data: result.data.map(MediaDto.fromPrisma),
       pagination: {
@@ -15,14 +16,14 @@ export class MediaService {
         hasMore: result.hasMore,
         count: result.count,
       },
-    };
+    }
   }
 
   async findById(id: string): Promise<MediaDto> {
-    const media = await this.mediaRepository.findById(id);
+    const media = await this.mediaRepository.findById(id)
     if (!media) {
-      throw new NotFoundException(`Media with ID "${id}" not found`);
+      throw new NotFoundException(`Media with ID "${id}" not found`)
     }
-    return MediaDto.fromPrisma(media);
+    return MediaDto.fromPrisma(media)
   }
 }

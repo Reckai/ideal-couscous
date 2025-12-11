@@ -1,36 +1,37 @@
-import { $Enums, Prisma, Room } from 'generated/prisma';
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../Prisma/prisma.service';
-import RoomStatus = $Enums.RoomStatus;
+import type { Room } from 'generated/prisma'
+import type { PrismaService } from '../../Prisma/prisma.service'
+import { Injectable, Logger } from '@nestjs/common'
+import { $Enums, Prisma } from 'generated/prisma'
+import RoomStatus = $Enums.RoomStatus
 
 export type RoomWithRelations = Prisma.RoomGetPayload<{
   include: {
     host: {
       select: {
-        id: true;
-        name: true;
-      };
-    };
+        id: true
+        name: true
+      }
+    }
     guest: {
       select: {
-        id: true;
-        name: true;
-      };
-    };
+        id: true
+        name: true
+      }
+    }
     match: {
       include: {
         media: {
           select: {
-            id: true;
-            tmdbId: true;
-            title: true;
-            posterPath: true;
-          };
-        };
-      };
-    };
-  };
-}>;
+            id: true
+            tmdbId: true
+            title: true
+            posterPath: true
+          }
+        }
+      }
+    }
+  }
+}>
 
 export type RoomBasic = Pick<
   Room,
@@ -41,11 +42,11 @@ export type RoomBasic = Pick<
   | 'guestId'
   | 'createdAt'
   | 'expiresAt'
->;
+>
 
 @Injectable()
 export class RoomRepository {
-  private readonly logger = new Logger(RoomRepository.name);
+  private readonly logger = new Logger(RoomRepository.name)
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -64,7 +65,7 @@ export class RoomRepository {
     expiresAt: Date,
     preferences?: Prisma.JsonValue,
   ): Promise<RoomWithRelations> {
-    this.logger.debug(`Creating room with invite code: ${inviteCode}`);
+    this.logger.debug(`Creating room with invite code: ${inviteCode}`)
     try {
       return await this.prisma.room.create({
         data: {
@@ -94,12 +95,13 @@ export class RoomRepository {
             },
           },
         },
-      });
+      })
     } catch (error) {
-      this.logger.error(`Failed to create room: ${error.message}`, error.stack);
-      throw error;
+      this.logger.error(`Failed to create room: ${error.message}`, error.stack)
+      throw error
     }
   }
+
   /**
    * Найти комнату по ID с полными relations
    *
@@ -136,14 +138,15 @@ export class RoomRepository {
             },
           },
         },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to find room by id ${roomId}: ${error.message}`,
-      );
-      throw error;
+      )
+      throw error
     }
   }
+
   /**
    * Найти комнату по invite code
    * Используется при присоединении guest'а
@@ -183,10 +186,10 @@ export class RoomRepository {
             },
           },
         },
-      });
+      })
     } catch (error) {
-      this.logger.error(`Failed to find room by inviteCode: ${error.message}`);
-      throw error;
+      this.logger.error(`Failed to find room by inviteCode: ${error.message}`)
+      throw error
     }
   }
   /**
@@ -203,11 +206,11 @@ export class RoomRepository {
         where: {
           inviteCode,
         },
-      });
-      return count > 0;
+      })
+      return count > 0
     } catch (error) {
-      this.logger.error(`Failed to find room by inviteCode: ${error.message}`);
-      throw error;
+      this.logger.error(`Failed to find room by inviteCode: ${error.message}`)
+      throw error
     }
   }
 
@@ -222,7 +225,7 @@ export class RoomRepository {
    * @throws PrismaClientKnownRequestError если комната не найдена
    */
   async addGuest(roomId: string, guestId: string): Promise<RoomWithRelations> {
-    this.logger.debug(`Adding guest to room: ${roomId}`);
+    this.logger.debug(`Adding guest to room: ${roomId}`)
     try {
       return await this.prisma.room.update({
         where: { id: roomId },
@@ -256,13 +259,13 @@ export class RoomRepository {
             },
           },
         },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to add guest to room ${roomId}: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -275,18 +278,18 @@ export class RoomRepository {
    */
 
   async updateStatus(roomId: string, status: RoomStatus): Promise<Room> {
-    this.logger.debug(`Update room  ${roomId} status to: ${status}`);
+    this.logger.debug(`Update room  ${roomId} status to: ${status}`)
     try {
       return await this.prisma.room.update({
         where: { id: roomId },
         data: { status },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to update room status ${roomId}: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -302,7 +305,7 @@ export class RoomRepository {
     roomId: string,
     mediaId: string,
   ): Promise<RoomWithRelations> {
-    this.logger.log(`Creating match for room ${roomId} with media ${mediaId}`);
+    this.logger.log(`Creating match for room ${roomId} with media ${mediaId}`)
     try {
       return await this.prisma.$transaction(async (tx) => {
         await tx.room.update({
@@ -312,14 +315,14 @@ export class RoomRepository {
           data: {
             status: RoomStatus.MATCHED,
           },
-        });
+        })
 
         await tx.roomMatch.create({
           data: {
-            roomId: roomId,
-            mediaId: mediaId,
+            roomId,
+            mediaId,
           },
-        });
+        })
 
         return tx.room.findUniqueOrThrow({
           where: { id: roomId },
@@ -349,16 +352,17 @@ export class RoomRepository {
               },
             },
           },
-        });
-      });
+        })
+      })
     } catch (error) {
       this.logger.error(
         `Failed to create match for room ${roomId}: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
+
   /**
    * Удалить комнату (hard delete)
    * Cascade удаляет связанные RoomMatch
@@ -366,18 +370,18 @@ export class RoomRepository {
    * @param roomId - ID комнаты
    */
   async delete(roomId: string): Promise<void> {
-    this.logger.debug(`Deleting room ${roomId}`);
+    this.logger.debug(`Deleting room ${roomId}`)
 
     try {
       await this.prisma.room.delete({
         where: { id: roomId },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to delete room ${roomId}: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -409,10 +413,10 @@ export class RoomRepository {
           createdAt: true,
           expiresAt: true,
         },
-      });
+      })
     } catch (error) {
-      this.logger.error(`Failed to find expired rooms: ${error.message}`);
-      throw error;
+      this.logger.error(`Failed to find expired rooms: ${error.message}`)
+      throw error
     }
   }
 
@@ -425,9 +429,9 @@ export class RoomRepository {
 
   async markAsExpired(roomIds: string[]): Promise<number> {
     if (roomIds.length === 0) {
-      return 0;
+      return 0
     }
-    this.logger.debug(`Marking ${roomIds.length} rooms as expired`);
+    this.logger.debug(`Marking ${roomIds.length} rooms as expired`)
 
     try {
       const result = await this.prisma.room.updateMany({
@@ -437,15 +441,15 @@ export class RoomRepository {
         data: {
           status: RoomStatus.EXPIRED,
         },
-      });
-      this.logger.log(`Marked ${result.count} rooms as expired`);
-      return result.count;
+      })
+      this.logger.log(`Marked ${result.count} rooms as expired`)
+      return result.count
     } catch (error) {
       this.logger.error(
         `Failed to mark rooms as expired: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 }

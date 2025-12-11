@@ -1,16 +1,16 @@
 // app.module.ts
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import configuration from './config/configutation';
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
 
-import { PrismaModule } from './Prisma/prisma.module';
-import { RoomModule } from './room/room.module';
-import { UserModule } from './user';
-import { ConfigModule } from '@nestjs/config';
-import { RedisModule } from './redis/redis.module';
-import { MediaModule } from './media/media.module';
-import { MatchingModule } from './matching/matching.module';
+import configuration from './config/configutation'
+import { MatchingModule } from './matching/matching.module'
+import { MediaModule } from './media/media.module'
+import { PrismaModule } from './Prisma/prisma.module'
+import { RedisModule } from './redis/redis.module'
+import { RoomModule } from './room/room.module'
+import { UserModule } from './user'
 
 @Module({
   imports: [

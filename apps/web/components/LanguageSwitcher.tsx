@@ -1,32 +1,32 @@
-'use client';
+'use client'
 
-import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '@/i18n/routing';
-import { Button } from '@/components/ui/button';
+import { Globe } from 'lucide-react'
+import { useLocale } from 'next-intl'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Globe } from 'lucide-react';
+} from '@/components/ui/dropdown-menu'
+import { usePathname, useRouter } from '@/i18n/routing'
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
   { code: 'ru', name: 'Русский', flag: '🇷🇺' },
   { code: 'uk', name: 'Українська', flag: '🇺🇦' },
-] as const;
+] as const
 
 export function LanguageSwitcher() {
-  const locale = useLocale();
-  const router = useRouter();
-  const pathname = usePathname();
+  const locale = useLocale()
+  const router = useRouter()
+  const pathname = usePathname()
 
-  const currentLanguage = languages.find((lang) => lang.code === locale);
+  const currentLanguage = languages.find((lang) => lang.code === locale)
 
   const handleLanguageChange = (newLocale: string) => {
-    router.replace(pathname, { locale: newLocale });
-  };
+    router.replace(pathname, { locale: newLocale })
+  }
 
   return (
     <DropdownMenu>
@@ -37,7 +37,11 @@ export function LanguageSwitcher() {
           className="gap-2 border-purple-500/30 hover:border-purple-500/60"
         >
           <Globe className="h-4 w-4" />
-          <span className="hidden sm:inline">{currentLanguage?.flag} {currentLanguage?.name}</span>
+          <span className="hidden sm:inline">
+            {currentLanguage?.flag}
+            {' '}
+            {currentLanguage?.name}
+          </span>
           <span className="sm:hidden">{currentLanguage?.flag}</span>
         </Button>
       </DropdownMenuTrigger>
@@ -54,5 +58,5 @@ export function LanguageSwitcher() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }

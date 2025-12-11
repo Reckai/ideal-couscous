@@ -1,7 +1,7 @@
-import { validateEnvironment } from './validation.schema';
+import { validateEnvironment } from './validation.schema'
 
 export default () => {
-  const env = validateEnvironment(process.env);
+  const env = validateEnvironment(process.env)
 
   return {
     nodeEnv: env.NODE_ENV,
@@ -25,5 +25,5 @@ export default () => {
     room: {
       ttlMinutes: env.ROOM_TTL_MINUTES,
     },
-  };
-};
+  }
+}

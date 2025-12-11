@@ -6,12 +6,15 @@
     "apps/*",
     "packages/*"
   ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "npm run docker:dev && npm run dev:apps",
     "dev:apps": "concurrently \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "cd apps/web && npm run dev",
     "dev:api": "cd apps/api && npm run start:dev",
-
     "docker:dev": "docker-compose -f docker-compose.dev.yml up -d postgres redis redis-commander",
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:restart": "docker-compose -f docker-compose.dev.yml restart",
@@ -20,32 +23,36 @@
     "docker:tools": "docker-compose -f docker-compose.dev.yml --profile tools up -d",
     "docker:tools-down": "docker-compose -f docker-compose.dev.yml --profile tools down",
     "docker:clean": "docker-compose -f docker-compose.dev.yml down -v",
-
     "db:migrate": "cd apps/api && npx prisma migrate dev",
     "db:reset": "cd apps/api && npx prisma migrate reset --force",
     "db:studio": "cd apps/api && npx prisma studio",
     "db:seed": "cd apps/api && npx prisma db seed",
     "db:generate": "cd apps/api && npx prisma generate",
     "db:backup": "node scripts/db-backup.js",
-
     "redis:cli": "docker exec -it netflix-tinder-redis redis-cli -a devredispass",
     "redis:flush": "docker exec -it netflix-tinder-redis redis-cli -a devredispass FLUSHALL",
-
     "setup": "npm install && npm run docker:dev && timeout /t 5 && npm run db:migrate",
-    "clean:all": "npm run docker:clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+    "clean:all": "npm run docker:clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "prepare": "husky",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^6.6.1",
+    "@eslint-react/eslint-plugin": "^2.3.13",
     "concurrently": "^8.2.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "typescript": "^5.4.5"
   },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "19.2.2",
-      "@types/react-dom": "19.2.2"
-    }
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs}": [
+      "eslint --fix"
+    ],
+    "*.{json,yaml,yml,md}": [
+      "eslint --fix"
+    ]
   }
 }

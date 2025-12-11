@@ -4,7 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-} from 'class-validator';
+} from 'class-validator'
 
 export enum SwipeAction {
   LIKE = 'LIKE',
@@ -13,48 +13,48 @@ export enum SwipeAction {
 
 export class SwipeDTO {
   @IsEnum(SwipeAction)
-  action: SwipeAction;
+  action: SwipeAction
 
   @IsUUID()
-  mediaId: string;
+  mediaId: string
 }
 // мне нада сделать дто свайпы, респонс
 
 export class SwipeResponseDTO {
   @IsUUID()
-  roomId: string;
+  roomId: string
 
   @IsUUID()
-  mediaId: string;
+  mediaId: string
 
   @IsEnum(SwipeAction)
-  action: SwipeAction;
+  action: SwipeAction
 }
 
 export class MatchFoundDTO {
   @IsUUID()
-  mediaId: string;
+  mediaId: string
 
   @IsString()
-  mediaTitle: string;
+  mediaTitle: string
 
   @IsOptional()
   @IsString()
-  posterPath: string | null;
+  posterPath: string | null
 
   @IsDateString()
-  matchedAt: Date;
+  matchedAt: Date
 }
 export class UserStatusDto {
-  userId: string;
-  status: 'online' | 'offline';
+  userId: string
+  status: 'online' | 'offline'
 }
 
 export class ErrorDto {
-  message: string;
-  code?: string;
+  message: string
+  code?: string
 }
 export class AddMediaDTO {
   @IsString()
-  mediaId: string;
+  mediaId: string
 }

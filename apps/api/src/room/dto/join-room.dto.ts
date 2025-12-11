@@ -1,5 +1,5 @@
-import { IsString, Length, Matches } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsString, Length, Matches } from 'class-validator'
 
 export class JoinRoomDTO {
   @ApiProperty({
@@ -13,5 +13,5 @@ export class JoinRoomDTO {
   @Matches(/^[A-Z0-9]+$/, {
     message: 'Invite code может содержать только заглавные буквы и цифры',
   })
-  inviteCode: string;
+  inviteCode: string
 }

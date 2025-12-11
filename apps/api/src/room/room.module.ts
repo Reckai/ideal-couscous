@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { RoomCacheRepository, RoomRepository } from './repositories';
-import { UserModule } from '../user/user.module';
+import { Module } from '@nestjs/common'
+import { UserModule } from '../user'
+import { RoomCacheRepository, RoomRepository } from './repositories'
 
 @Module({
   imports: [UserModule], // Needed for AnonymousUserGuard in RoomController

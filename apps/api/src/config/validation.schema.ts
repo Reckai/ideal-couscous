@@ -1,6 +1,6 @@
 // apps/api/src/config/validation.schema.ts
 
-import { z } from 'zod';
+import { z } from 'zod'
 
 /**
  * Zod schema для валидации environment variables
@@ -13,7 +13,7 @@ export const environmentSchema = z.object({
 
   PORT: z
     .string()
-    .transform((val) => parseInt(val, 10))
+    .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().int().positive())
     .default(4000),
 
@@ -31,7 +31,7 @@ export const environmentSchema = z.object({
 
   REDIS_PORT: z
     .string()
-    .transform((val) => parseInt(val, 10))
+    .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().int().min(1).max(65535))
     .default(6379),
 
@@ -44,22 +44,22 @@ export const environmentSchema = z.object({
 
   SESSION_TTL_DAYS: z
     .string()
-    .transform((val) => parseInt(val, 10))
+    .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().int().positive())
     .default(30),
 
   // Room
   ROOM_TTL_MINUTES: z
     .string()
-    .transform((val) => parseInt(val, 10))
+    .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().int().positive())
     .default(30),
-});
+})
 
 /**
  * Инферим TypeScript тип из Zod schema
  */
-export type Environment = z.infer<typeof environmentSchema>;
+export type Environment = z.infer<typeof environmentSchema>
 
 /**
  * Функция валидации environment variables
@@ -67,15 +67,15 @@ export type Environment = z.infer<typeof environmentSchema>;
 export function validateEnvironment(
   config: Record<string, unknown>,
 ): Environment {
-  const result = environmentSchema.safeParse(config);
+  const result = environmentSchema.safeParse(config)
 
   if (!result.success) {
     const errors = result.error.issues.map((issue) => {
-      return `${issue.path.join('.')}: ${issue.message}`;
-    });
+      return `${issue.path.join('.')}: ${issue.message}`
+    })
 
-    throw new Error(`Environment validation failed:\n${errors.join('\n')}`);
+    throw new Error(`Environment validation failed:\n${errors.join('\n')}`)
   }
 
-  return result.data;
+  return result.data
 }

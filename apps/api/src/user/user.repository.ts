@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { User } from 'generated/prisma';
-import { PrismaService } from '../Prisma/prisma.service';
+import type { User } from 'generated/prisma'
+import type { PrismaService } from '../Prisma/prisma.service'
+import { Injectable, Logger } from '@nestjs/common'
 
 /**
  * UserRepository - работа с пользователями в PostgreSQL
@@ -9,7 +9,7 @@ import { PrismaService } from '../Prisma/prisma.service';
  */
 @Injectable()
 export class UserRepository {
-  private readonly logger = new Logger(UserRepository.name);
+  private readonly logger = new Logger(UserRepository.name)
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -21,9 +21,9 @@ export class UserRepository {
    * @returns Созданный пользователь
    */
   async createAnonymous(name?: string): Promise<User> {
-    const userName = name || this.generateGuestName();
+    const userName = name || this.generateGuestName()
 
-    this.logger.debug(`Creating anonymous user: ${userName}`);
+    this.logger.debug(`Creating anonymous user: ${userName}`)
 
     try {
       return await this.prisma.user.create({
@@ -31,13 +31,13 @@ export class UserRepository {
           name: userName,
           isAnonymous: true,
         },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to create anonymous user: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -51,12 +51,12 @@ export class UserRepository {
     try {
       return await this.prisma.user.findUnique({
         where: { id: userId },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to find user by id ${userId}: ${error.message}`,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -70,13 +70,13 @@ export class UserRepository {
     try {
       const count = await this.prisma.user.count({
         where: { id: userId },
-      });
-      return count > 0;
+      })
+      return count > 0
     } catch (error) {
       this.logger.error(
         `Failed to check user existence ${userId}: ${error.message}`,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -86,18 +86,18 @@ export class UserRepository {
    * @param userId - UUID пользователя
    */
   async delete(userId: string): Promise<void> {
-    this.logger.debug(`Deleting user ${userId}`);
+    this.logger.debug(`Deleting user ${userId}`)
 
     try {
       await this.prisma.user.delete({
         where: { id: userId },
-      });
+      })
     } catch (error) {
       this.logger.error(
         `Failed to delete user ${userId}: ${error.message}`,
         error.stack,
-      );
-      throw error;
+      )
+      throw error
     }
   }
 
@@ -110,7 +110,7 @@ export class UserRepository {
    * Использует base36 для компактности (6 символов = ~2 млрд комбинаций)
    */
   private generateGuestName(): string {
-    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `Guest_${randomPart}`;
+    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
+    return `Guest_${randomPart}`
   }
 }

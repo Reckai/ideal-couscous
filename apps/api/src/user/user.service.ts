@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { User } from 'generated/prisma';
-import { UserRepository } from './user.repository';
+import type { User } from 'generated/prisma'
+import type { UserRepository } from './user.repository'
+import { Injectable, NotFoundException } from '@nestjs/common'
 
 /**
  * UserService - бизнес-логика для работы с пользователями
@@ -18,7 +18,7 @@ export class UserService {
    * @returns Созданный пользователь
    */
   async createAnonymousUser(): Promise<User> {
-    return this.userRepository.createAnonymous();
+    return this.userRepository.createAnonymous()
   }
 
   /**
@@ -29,13 +29,13 @@ export class UserService {
    * @throws NotFoundException если пользователь не найден
    */
   async getUserById(userId: string): Promise<User> {
-    const user = await this.userRepository.findById(userId);
+    const user = await this.userRepository.findById(userId)
 
     if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
+      throw new NotFoundException(`User with ID "${userId}" not found`)
     }
 
-    return user;
+    return user
   }
 
   /**
@@ -46,7 +46,7 @@ export class UserService {
    * @returns true если пользователь существует
    */
   async userExists(userId: string): Promise<boolean> {
-    return this.userRepository.exists(userId);
+    return this.userRepository.exists(userId)
   }
 
   /**
@@ -60,14 +60,14 @@ export class UserService {
   async getOrCreateUser(userId?: string): Promise<User> {
     // Если userId передан, пытаемся найти пользователя
     if (userId) {
-      const user = await this.userRepository.findById(userId);
+      const user = await this.userRepository.findById(userId)
       if (user) {
-        return user;
+        return user
       }
     }
 
     // Если не нашли или не был передан - создаем нового
-    return this.createAnonymousUser();
+    return this.createAnonymousUser()
   }
 
   /**
@@ -77,7 +77,7 @@ export class UserService {
    * @param userId - UUID пользователя
    */
   async deleteUser(userId: string): Promise<void> {
-    await this.getUserById(userId); // Проверяем существование
-    await this.userRepository.delete(userId);
+    await this.getUserById(userId) // Проверяем существование
+    await this.userRepository.delete(userId)
   }
 }

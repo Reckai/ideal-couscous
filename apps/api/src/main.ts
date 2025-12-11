@@ -1,28 +1,28 @@
-import { config } from 'dotenv';
+import { Logger, ValidationPipe } from '@nestjs/common'
 
-config();
+import { NestFactory } from '@nestjs/core'
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import * as cookieParser from 'cookie-parser'
+import { config } from 'dotenv'
+import { AppModule } from './app.module'
 
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
-import * as cookieParser from 'cookie-parser';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+config()
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+  const logger = new Logger('Bootstrap')
 
-  logger.log('🚀 Starting application...');
-  logger.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.log('🚀 Starting application...')
+  logger.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`)
 
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
-  });
+  })
 
   // Cookie parser for AnonymousUserGuard (MVP v1)
-  app.use(cookieParser());
+  app.use(cookieParser())
 
   // Global prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api')
 
   // Validation
   app.useGlobalPipes(
@@ -31,13 +31,13 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
     }),
-  );
+  )
 
   // CORS (allow credentials for cookies)
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
-  });
+  })
 
   // Swagger API Documentation (only in development)
   if (process.env.NODE_ENV !== 'production') {
@@ -54,9 +54,9 @@ async function bootstrap() {
         in: 'cookie',
         description: 'Cookie с ID анонимного пользователя',
       })
-      .build();
+      .build()
 
-    const document = SwaggerModule.createDocument(app, config);
+    const document = SwaggerModule.createDocument(app, config)
     SwaggerModule.setup('api/docs', app, document, {
       swaggerOptions: {
         persistAuthorization: true, // Сохранять авторизацию между перезагрузками
@@ -64,21 +64,21 @@ async function bootstrap() {
         operationsSorter: 'alpha', // Сортировка операций по алфавиту
       },
       customSiteTitle: 'Anime Tinder API Docs',
-    });
+    })
 
     logger.log(
       '📖 Swagger documentation available at http://localhost:4000/api/docs',
-    );
+    )
   }
 
-  const port = process.env.PORT || 4000;
-  await app.listen(port);
+  const port = process.env.PORT || 4000
+  await app.listen(port)
 
-  logger.log(`✅ Application running on http://localhost:${port}/api`);
-  logger.log(`🏥 Health check: http://localhost:${port}/api/health`);
+  logger.log(`✅ Application running on http://localhost:${port}/api`)
+  logger.log(`🏥 Health check: http://localhost:${port}/api/health`)
 }
 
 bootstrap().catch((err) => {
-  console.error('❌ Failed to start:', err);
-  process.exit(1);
-});
+  console.error('❌ Failed to start:', err)
+  process.exit(1)
+})

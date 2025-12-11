@@ -1,6 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { MediaService } from './media.service';
-import { MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto';
+import type { MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
+import type { MediaService } from './media.service'
+import { Controller, Get, Param, Query } from '@nestjs/common'
 
 @Controller('media')
 export class MediaController {
@@ -8,10 +8,11 @@ export class MediaController {
 
   @Get()
   async findAll(@Query() query: MediaQueryDto): Promise<MediaListResponseDto> {
-    return this.mediaService.findAll(query);
+    return this.mediaService.findAll(query)
   }
+
   @Get(':id')
   async findById(@Param('id') id: string): Promise<MediaDto> {
-    return this.mediaService.findById(id);
+    return this.mediaService.findById(id)
   }
 }

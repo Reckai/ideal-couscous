@@ -1,4 +1,4 @@
-import { IsArray, IsString, ArrayMinSize } from 'class-validator';
+import { ArrayMinSize, IsArray, IsString } from 'class-validator'
 
 /**
  * DTO для отправки выборов фильмов
@@ -8,5 +8,5 @@ export class SubmitSelectionsDto {
   @IsArray()
   @ArrayMinSize(5, { message: 'Please select at least 5 movies/series' })
   @IsString({ each: true })
-  mediaIds: string[];
+  mediaIds: string[]
 }

@@ -1,5 +1,6 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { User } from 'generated/prisma';
+import type { ExecutionContext } from '@nestjs/common'
+import type { User } from 'generated/prisma'
+import { createParamDecorator } from '@nestjs/common'
 
 /**
  * CurrentUser - декоратор для извлечения текущего пользователя из request
@@ -23,21 +24,21 @@ import { User } from 'generated/prisma';
  */
 export const CurrentUser = createParamDecorator(
   (property: keyof User | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user as User;
+    const request = ctx.switchToHttp().getRequest()
+    const user = request.user as User
 
     if (!user) {
       throw new Error(
         'CurrentUser decorator requires AnonymousUserGuard or AuthGuard to be applied',
-      );
+      )
     }
 
     // Если передано имя свойства, возвращаем только его
     if (property) {
-      return user[property];
+      return user[property]
     }
 
     // Иначе возвращаем весь объект пользователя
-    return user;
+    return user
   },
-);
+)

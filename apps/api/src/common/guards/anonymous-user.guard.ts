@@ -1,11 +1,13 @@
-import {
-  Injectable,
+import type {
   CanActivate,
   ExecutionContext,
+} from '@nestjs/common'
+import type { Request, Response } from 'express'
+import type { UserService } from '../../user'
+import {
+  Injectable,
   Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { UserService } from '../../user/user.service';
+} from '@nestjs/common'
 
 /**
  * Cookie для хранения ID анонимного пользователя
@@ -13,8 +15,8 @@ import { UserService } from '../../user/user.service';
  * HttpOnly: защита от XSS
  * SameSite: защита от CSRF
  */
-const ANONYMOUS_USER_COOKIE = 'anonymousUserId';
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 дней в миллисекундах
+const ANONYMOUS_USER_COOKIE = 'anonymousUserId'
+const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000 // 30 дней в миллисекундах
 
 /**
  * AnonymousUserGuard - автоматическое создание/восстановление анонимных пользователей
@@ -31,41 +33,41 @@ const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 дней в миллис�
  */
 @Injectable()
 export class AnonymousUserGuard implements CanActivate {
-  private readonly logger = new Logger(AnonymousUserGuard.name);
+  private readonly logger = new Logger(AnonymousUserGuard.name)
 
   constructor(private readonly userService: UserService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const response = context.switchToHttp().getResponse<Response>();
+    const request = context.switchToHttp().getRequest<Request>()
+    const response = context.switchToHttp().getResponse<Response>()
 
     // Получаем userId из cookie
     const cookieUserId = request.cookies?.[ANONYMOUS_USER_COOKIE] as
       | string
-      | undefined;
+      | undefined
 
-    let user;
+    let user
 
     if (cookieUserId) {
-      this.logger.debug(`Found cookie userId: ${cookieUserId}`);
+      this.logger.debug(`Found cookie userId: ${cookieUserId}`)
 
       // Пытаемся получить или создать пользователя
-      user = await this.userService.getOrCreateUser(cookieUserId);
+      user = await this.userService.getOrCreateUser(cookieUserId)
 
       // Если вернулся другой пользователь (cookie был невалидный), логируем
       if (user.id !== cookieUserId) {
         this.logger.warn(
           `Cookie userId ${cookieUserId} not found, created new user ${user.id}`,
-        );
+        )
       }
     } else {
-      this.logger.debug('No cookie found, creating new anonymous user');
+      this.logger.debug('No cookie found, creating new anonymous user')
       // Создаем нового анонимного пользователя
-      user = await this.userService.createAnonymousUser();
+      user = await this.userService.createAnonymousUser()
     }
 
     // Сохраняем пользователя в request для доступа через декоратор
-    request['user'] = user;
+    request.user = user
 
     // Устанавливаем/обновляем cookie
     response.cookie(ANONYMOUS_USER_COOKIE, user.id, {
@@ -74,10 +76,10 @@ export class AnonymousUserGuard implements CanActivate {
       sameSite: 'lax', // Защита от CSRF
       maxAge: COOKIE_MAX_AGE,
       path: '/', // Доступен для всего сайта
-    });
+    })
 
-    this.logger.debug(`User authenticated: ${user.id} (${user.name})`);
+    this.logger.debug(`User authenticated: ${user.id} (${user.name})`)
 
-    return true;
+    return true
   }
 }
