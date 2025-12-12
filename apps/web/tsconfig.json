@@ -11,9 +11,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["./*"],
-      "@shared/*": ["../../packages/shared/src/*"],
-      "@shared": ["../../packages/shared/src"]
+      "@/*": ["./*"]
     },
     "resolveJsonModule": true,
     "allowJs": true,

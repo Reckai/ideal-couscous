@@ -1,4 +1,4 @@
-import type { ClientToServerEvents, ServerToClientEvents } from '@shared'
+import type { ClientToServerEvents, ServerToClientEvents } from '@netflix-tinder/shared'
 import type { Socket } from 'socket.io-client'
 import { io } from 'socket.io-client'
 

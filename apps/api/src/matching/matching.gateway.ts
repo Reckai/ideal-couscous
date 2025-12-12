@@ -10,7 +10,7 @@ import type {
   RoomData,
   ServerToClientEvents,
   SocketData,
-} from '@shared'
+} from '@netflix-tinder/shared'
 import type { Server, Socket } from 'socket.io'
 import { Logger } from '@nestjs/common'
 import {

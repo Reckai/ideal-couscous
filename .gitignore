@@ -77,6 +77,11 @@ out/
 # NestJS build output
 dist/
 
+# Shared package compiled files (TypeScript exports raw .ts)
+packages/shared/src/**/*.js
+packages/shared/src/**/*.js.map
+packages/shared/src/**/*.d.ts
+
 # VSCode settings
 .vscode/*
 !.vscode/settings.json
