@@ -2,6 +2,7 @@ import type { RoomData, UserDTO } from '@netflix-tinder/shared'
 import { action, atom, effect, withAsync, withLocalStorage, wrap } from '@reatom/core'
 
 import { socket } from '@/providers/socket'
+import { router } from '@/router'
 
 export const roomIdAtom = atom<string | null>(null, 'roomIdAtom').extend(
   withLocalStorage('room-id'),
@@ -87,7 +88,7 @@ export const createRoomAction = action(async () => {
     roomIdAtom.set(response.data.inviteCode)
     console.log('[createRoomAction] Setting roomData to:', response.data)
     roomDataAtom.set(response.data)
-    return response.data
+    router.navigate(`/room/${response.data.inviteCode}`)
   } else {
     const error = response.error.message
     errorAtom.set(error)
@@ -114,3 +115,27 @@ export const joinRoomAction = action(async (inviteCode: string) => {
     throw new Error(error)
   }
 }, 'joinRoomAction').extend(withAsync())
+
+export const leaveRoomAction = action(async () => {
+  console.log('[leaveRoomAction] Starting...')
+  errorAtom.set(null)
+  const roomId = roomIdAtom()
+  if (!roomId) {
+    errorAtom.set('No room ID found')
+    console.log('[leaveRoomAction] No room ID found')
+    return { shouldRedirect: false }
+  }
+  const response = await wrap(socket.emitWithAck('leave_room', { roomId }))
+
+  console.log('[leaveRoomAction] Response:', response)
+  if (response.success || response.error?.code === 'NOT_IN_ROOM') {
+    // Clear state for both success and NOT_IN_ROOM
+    roomIdAtom.set(null)
+    roomDataAtom.set(null)
+    return router.navigate('/room')
+  }
+
+  const errorMessage = response.error.message
+  errorAtom.set(errorMessage)
+  throw new Error(errorMessage)
+}, 'leaveRoomAction').extend(withAsync())

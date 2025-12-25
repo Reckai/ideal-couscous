@@ -54,6 +54,7 @@ export interface ClientToServerEvents {
   create_room: (callback: AckCallback<RoomData>) => void
   join_room: (data: { roomId: string }, callback: AckCallback<RoomData>) => void
   add_anime: (data: { mediaId: string }, callback: AckCallback<AnimeAddedData>) => void
+  leave_room: (data: { roomId: string }, callback: AckCallback<void>) => void
 }
 
 export interface InterServerEvents {

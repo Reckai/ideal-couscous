@@ -232,4 +232,48 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
   }
+
+  @SubscribeMessage('leave_room')
+  async handleLeaveRoom(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { roomId: string },
+  ) {
+    const { roomId: currentRoomId, userId } = client.data
+    if (!userId) {
+      return {
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      }
+    }
+
+    if (!currentRoomId) {
+      return {
+        success: false,
+        error: { message: 'User is not in a room', code: 'NOT_IN_ROOM' },
+      }
+    }
+    if (currentRoomId !== data.roomId) {
+      return {
+        success: false,
+        error: { message: 'User is not in the room', code: 'NOT_IN_ROOM' },
+      }
+    }
+
+    try {
+      await this.matchingService.removeUserFromRoom(currentRoomId, userId)
+      await client.leave(currentRoomId)
+      client.data.roomId = null
+      this.server.to(currentRoomId).emit('user_left', { userId })
+      return {
+        success: true,
+        data: { roomId: currentRoomId },
+      }
+    } catch (e) {
+      this.logger.error(`Leave room error: ${e.message}`)
+      return {
+        success: false,
+        error: { message: e.message || 'Failed to leave room', code: 'LEAVE_ROOM_FAILED' },
+      }
+    }
+  }
 }

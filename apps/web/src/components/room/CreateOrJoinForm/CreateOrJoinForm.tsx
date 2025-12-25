@@ -2,14 +2,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { Plus, Users } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { cn } from '@/lib/utils'
-import { createRoomAction, errorAtom, joinRoomAction, roomIdAtom } from '@/models/room.model'
+import { createRoomAction, errorAtom, joinRoomAction } from '@/models/room.model'
 
 const items = [0, 1, 2, 3, 4, 5]
 const ALLOWED_CHARS_REGEX = /^[A-HJ-NP-Z2-9]+$/
@@ -21,10 +21,7 @@ const validationSchema = z.object({
 })
 
 const CreateOrJoinForm = reatomComponent(() => {
-  const navigate = useNavigate()
   const error = errorAtom()
-  const roomId = roomIdAtom()
-  // Use withAsync built-in pending states (convert to boolean since pending is a counter)
   const isCreatePending = Boolean(createRoomAction.pending())
   const isJoinPending = Boolean(joinRoomAction.pending())
   const isPending = isCreatePending || isJoinPending
@@ -37,15 +34,6 @@ const CreateOrJoinForm = reatomComponent(() => {
       inviteCode: '',
     },
   })
-
-  // Navigate when roomId changes (reactive in reatomComponent)
-  useEffect(() => {
-    console.log('[CreateOrJoinForm] roomId changed to:', roomId)
-    if (roomId) {
-      console.log('[CreateOrJoinForm] Navigating to /room/', roomId)
-      navigate(`/room/${roomId}`)
-    }
-  }, [roomId, navigate])
 
   const onSubmit = wrap((data: z.infer<typeof validationSchema>) => {
     joinRoomAction(data.inviteCode)
