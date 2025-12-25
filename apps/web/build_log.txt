@@ -1,0 +1,13 @@
+
+> web@0.0.0 build C:\Users\reckai\Desktop\anime_tinder\apps\web
+> tsc -b && vite build
+
+src/App.tsx(2,10): error TS2305: Module '"@reatom/core"' has no exported member 'createCtx'.
+src/components/DisplayIsSocketConnect.tsx(3,1): error TS6133: 'React' is declared but its value is never read.
+src/components/room/CreateOrJoinForm/CreateOrJoinForm.tsx(4,1): error TS6133: 'React' is declared but its value is never read.
+src/components/room/CreateOrJoinForm/hooks/useRoomState.ts(4,10): error TS1484: 'RoomData' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/room/CreateOrJoinForm/hooks/useRoomState.ts(4,20): error TS1484: 'UserDTO' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/ui/input-otp.tsx(3,43): error TS2307: Cannot find module 'input-otp' or its corresponding type declarations.
+src/components/ui/input-otp.tsx(47,61): error TS2339: Property 'slots' does not exist on type '{}'.
+src/providers/socket.ts(7,16): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+ ELIFECYCLE  Command failed with exit code 2.

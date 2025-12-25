@@ -2,6 +2,7 @@
 
 import { Injectable, Logger } from '@nestjs/common'
 import { RoomStatus } from 'generated/prisma'
+import { User } from '../../matching/types/user'
 import { RedisService } from '../../redis/redis.service'
 
 /**
@@ -31,7 +32,7 @@ export class RoomCacheRepository {
     users: (roomId: string) => `room:${roomId}:users`,
   }
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(private readonly redis: RedisService) { }
 
   // ============================================================================
   // ROOM STATE OPERATIONS
@@ -40,7 +41,7 @@ export class RoomCacheRepository {
   /**
    * Инициализировать состояние комнаты
    */
-  async initRoom(roomId: string, hostId: string): Promise<void> {
+  async initRoom(roomId: string, hostId: string, nickName: string): Promise<void> {
     const key = this.KEYS.roomState(roomId)
     this.logger.debug(`Initializing room state: ${roomId}`)
 
@@ -53,7 +54,7 @@ export class RoomCacheRepository {
         createdAt: Date.now(),
       })
       await this.redis.expire(key, this.ROOM_TTL)
-      await this.redis.sadd(this.KEYS.users(roomId), hostId)
+      await this.addUserToRoom(roomId, hostId, nickName)
       await this.redis.expire(this.KEYS.users(roomId), this.ROOM_TTL)
     } catch (error) {
       this.logger.error(
@@ -72,12 +73,12 @@ export class RoomCacheRepository {
 
   async getRoomUserCount(roomId: string): Promise<number> {
     const key = this.KEYS.users(roomId)
-    return this.redis.scard(key)
+    return this.redis.hlen(key)
   }
 
   async isUserInRoom(roomId: string, userId: string): Promise<boolean> {
     const key = this.KEYS.users(roomId)
-    const result = await this.redis.sismember(key, userId)
+    const result = await this.redis.hexists(key, userId)
     return result === 1
   }
 
@@ -172,6 +173,17 @@ export class RoomCacheRepository {
     return state ? state.hostReady && state.guestReady : false
   }
 
+  async getHostId(roomId: string): Promise<string> {
+    const key = this.KEYS.roomState(roomId)
+    return this.redis.hget(key, 'hostId')
+  }
+
+  async isUserHost(roomId: string, userId: string): Promise<boolean> {
+    const key = this.KEYS.roomState(roomId)
+    const hostId = await this.redis.hget(key, 'hostId')
+    return hostId === userId
+  }
+
   // ============================================================================
   // USER SELECTIONS OPERATIONS
   // ============================================================================
@@ -194,6 +206,15 @@ export class RoomCacheRepository {
     return result
   }
 
+  async getUsersInRoom(roomId: string): Promise<User[]> {
+    const key = this.KEYS.users(roomId)
+
+    const rawUsers = await this.redis.hgetall(key)
+
+    return Object.values(rawUsers).map((jsonString) => {
+      return JSON.parse(jsonString)
+    }) as User[]
+  }
   /**
    * Получить выборы пользователя
    */
@@ -282,12 +303,16 @@ export class RoomCacheRepository {
 
   async removeUserFromRoom(roomId: string, userId: string): Promise<void> {
     const key = this.KEYS.users(roomId)
-    await this.redis.srem(key, userId)
+    await this.redis.hdel(key, userId)
   }
 
-  async addUserToRoom(roomId: string, userId: string): Promise<void> {
+  async addUserToRoom(roomId: string, userId: string, nickName: string): Promise<void> {
     const key = this.KEYS.users(roomId)
-    await this.redis.sadd(key, userId)
+    const userData: User = {
+      nickName,
+      userId,
+    }
+    await this.redis.hset(key, userId, JSON.stringify(userData))
     await this.redis.expire(key, this.ROOM_TTL)
   }
 

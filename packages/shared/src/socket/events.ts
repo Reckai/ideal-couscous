@@ -21,11 +21,19 @@ export interface ConnectionData {
   userId: string
   isNew: boolean
 }
-
-export interface RoomData {
+export interface User {
   userId: string
-  status: UserStatus
+  nickName: string
+}
+export interface UserDTO {
+  userId: string
+  nickName: string
+  isHost: boolean
+}
+export interface RoomData {
   inviteCode: string
+  usersCount: number
+  users: UserDTO[]
 }
 
 export interface AnimeAddedData {
@@ -36,7 +44,7 @@ export interface AnimeAddedData {
 // Server -> Client events (broadcasts only, no acks)
 export interface ServerToClientEvents {
   connection_established: (data: ConnectionData) => void
-  user_joined: (data: { userId: string }) => void
+  user_joined: (data: UserDTO & { usersCount: number }) => void
   user_left: (data: { userId: string }) => void
   anime_added: (data: AnimeAddedData) => void
 }

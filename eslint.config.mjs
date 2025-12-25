@@ -34,6 +34,7 @@ export default antfu({
     '**/prisma/migrations/**',
     '**/*.md',
     '**/*.lock',
+    'pnpm-workspace.yaml',
     'pnpm-lock.yaml',
     '.idea/**',
     'Makefile',

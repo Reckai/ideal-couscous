@@ -7,16 +7,18 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
+import { RoomData } from '@netflix-tinder/shared'
 import { RoomStatus } from 'generated/prisma'
 import { customAlphabet } from 'nanoid'
-import { PrismaService } from '../Prisma/prisma.service'
 
+import { PrismaService } from '../Prisma/prisma.service'
 import {
   RoomCacheRepository,
   RoomRepository,
 } from '../room/repositories'
 import { SwipeAction } from './dto/swipes.dto'
 import { MatchingCacheRepository } from './repositories/matching-cache.repository'
+import { User } from './types/user'
 
 @Injectable()
 export class MatchingService {
@@ -26,7 +28,7 @@ export class MatchingService {
     private readonly roomRepo: RoomRepository,
     private readonly roomCache: RoomCacheRepository,
     private readonly matchingCache: MatchingCacheRepository,
-  ) {}
+  ) { }
 
   /**
    * Validates room exists and is in SWIPING state
@@ -88,13 +90,14 @@ export class MatchingService {
     6,
   )
 
-  async createRoom(userId: string): Promise<string> {
+  async createRoom(userId: string): Promise<RoomData> {
     const roomId = this.generateInviteCode()
-
+    const nickName = this.createNickName()
     try {
-      await this.roomCache.initRoom(roomId, userId)
+      await this.roomCache.initRoom(roomId, userId, nickName)
+      const users = await this.roomCache.getUsersInRoom(roomId)
 
-      return roomId
+      return { inviteCode: roomId, usersCount: users.length, users: users.map((user) => ({ ...user, isHost: true })) }
     } catch (error) {
       throw new Error(`Error on creating room:${error}`)
     }
@@ -104,7 +107,7 @@ export class MatchingService {
     await this.roomCache.removeUserFromRoom(roomId, userId)
   }
 
-  async addUserToRoom(roomId: string, userId: string): Promise<void> {
+  async addUserToRoom(roomId: string, userId: string): Promise<RoomData> {
     const roomExist = await this.roomCache.validateRoomExistence(roomId)
 
     if (!roomExist) {
@@ -114,8 +117,56 @@ export class MatchingService {
     if (userCount >= 2) {
       throw new BadRequestException(`Room is full`)
     }
+    const nickName = this.createNickName()
+    await this.roomCache.addUserToRoom(roomId, userId, nickName)
+    const users = await this.roomCache.getUsersInRoom(roomId)
+    const hostId = await this.roomCache.getHostId(roomId)
+    return {
+      users: users.map((user) => ({ ...user, isHost: user.userId === hostId })),
+      usersCount: users.length,
+      inviteCode: roomId,
+    }
+  }
 
-    await this.roomCache.addUserToRoom(roomId, userId)
+  async getRoomData(roomId: string): Promise<RoomData> {
+    const users = await this.roomCache.getUsersInRoom(roomId)
+    const hostId = await this.roomCache.getHostId(roomId)
+    return {
+      users: users.map((user) => ({
+        ...user,
+        isHost: user.userId === hostId,
+      })),
+      usersCount: users.length,
+      inviteCode: roomId,
+    }
+  }
+
+  private readonly animals = [
+    'Panda',
+    'Fox',
+    'Wolf',
+    'Bear',
+    'Tiger',
+    'Lion',
+    'Eagle',
+    'Owl',
+    'Dolphin',
+    'Shark',
+    'Dragon',
+    'Phoenix',
+    'Unicorn',
+    'Giraffe',
+    'Koala',
+    'Penguin',
+    'Rabbit',
+    'Cat',
+    'Dog',
+    'Hawk',
+  ]
+
+  private createNickName(): string {
+    const randomAnimal = this.animals[Math.floor(Math.random() * this.animals.length)]
+    return `guest_${randomAnimal}`
   }
 
   async addMediaToDraft(
