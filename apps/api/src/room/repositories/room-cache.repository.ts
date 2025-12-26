@@ -76,6 +76,16 @@ export class RoomCacheRepository {
     return this.redis.hlen(key)
   }
 
+  async getNameOfUserInRoom(roomId: string, userId: string): Promise<string> {
+    const key = this.KEYS.users(roomId)
+    const result = await this.redis.hget(key, userId)
+    if (!result) {
+      return null
+    };
+    const user: User = JSON.parse(result)
+    return user.nickName
+  }
+
   async isUserInRoom(roomId: string, userId: string): Promise<boolean> {
     const key = this.KEYS.users(roomId)
     const result = await this.redis.hexists(key, userId)

@@ -117,7 +117,10 @@ export class MatchingService {
     if (userCount >= 2) {
       throw new BadRequestException(`Room is full`)
     }
-    const nickName = this.createNickName()
+
+    const userNameOfUserInRoom = await this.roomCache.getNameOfUserInRoom(roomId, userId)
+
+    const nickName = this.compareAndRecreateNickName(userNameOfUserInRoom, this.createNickName())
     await this.roomCache.addUserToRoom(roomId, userId, nickName)
     const users = await this.roomCache.getUsersInRoom(roomId)
     const hostId = await this.roomCache.getHostId(roomId)
@@ -278,5 +281,13 @@ export class MatchingService {
 
     // Возвращаем в том же порядке что в pool
     return mediaIds.map((id) => media.find((m) => m.id === id))
+  }
+
+  private compareAndRecreateNickName(nickNameInRoom: string, nickName: string) {
+    if (nickNameInRoom !== nickName) {
+      return nickName
+    }
+    const newNickName = this.createNickName()
+    return this.compareAndRecreateNickName(nickNameInRoom, newNickName)
   }
 }
