@@ -1,5 +1,5 @@
 import type { AckError, ConnectionData, RoomData, UserDTO } from '@netflix-tinder/shared'
-import { action, atom, effect, take, withAsync, withCookieStore, withLocalStorage, wrap } from '@reatom/core'
+import { action, atom, computed, effect, take, withAsync, withCookieStore, withLocalStorage, wrap } from '@reatom/core'
 
 import { socket } from '@/providers/socket'
 import { router } from '@/router'
@@ -189,3 +189,8 @@ export const leaveRoomAction = action(async () => {
   errorAtom.set(errorMessage)
   throw new Error(errorMessage)
 }, 'leaveRoomAction').extend(withAsync())
+
+export const isHost = computed(() => {
+  const roomData = roomDataAtom()
+  return roomData?.users.find((user) => user.userId === userIdAtom())?.isHost ?? false
+})

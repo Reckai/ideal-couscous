@@ -1,7 +1,6 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
-
-import { Users } from 'lucide-react'
+import { LogOut, Users } from 'lucide-react'
 
 import { useParams } from 'react-router-dom'
 
@@ -19,7 +18,9 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 // Импорты атомов
-import { leaveRoomAction, roomDataAtom, roomIdAtom } from '@/models/room.model'
+import { isHost, leaveRoomAction, roomDataAtom, roomIdAtom } from '@/models/room.model'
+import { InviteCodeCoppier } from './components/InviteCodeCoppier'
+import { StartGameButton } from './components/StartGameButton'
 
 const Room = reatomComponent(() => {
   const { inviteCode } = useParams<{ inviteCode: string }>()
@@ -44,9 +45,6 @@ const Room = reatomComponent(() => {
   console.log(roomState)
   return (
     <div className="container mx-auto min-h-screen relative p-4">
-      <div className="absolute top-4 left-4">
-        <Button variant="destructive" disabled={leaveRoomPending} onClick={handleLeaveRoom}>Leave Room</Button>
-      </div>
 
       <div className="min-h-screen flex justify-center items-center">
         <Card className="w-full max-w-md shadow-lg">
@@ -56,17 +54,31 @@ const Room = reatomComponent(() => {
                 <CardTitle className="text-2xl">Комната</CardTitle>
                 <CardDescription>Список активных участников</CardDescription>
               </div>
-              <Badge variant="secondary" className="text-sm px-3 py-1 gap-2">
-                <Users size={16} />
-                {roomDataAtom()?.usersCount ?? 0}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm px-3 py-1 gap-2">
+                  <Users size={16} />
+                  {roomState?.usersCount ?? 0}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  disabled={leaveRoomPending}
+                  onClick={handleLeaveRoom}
+                  title="Leave Room"
+                >
+                  <LogOut size={20} />
+                </Button>
+              </div>
             </div>
           </CardHeader>
 
           <Separator />
 
-          <CardContent className="pt-6">
-            <ScrollArea className="h-[300px] w-full pr-4">
+          <CardContent className="pt-6 flex flex-col gap-6">
+            {/* Invite Code Section */}
+            {isHost() && <InviteCodeCoppier />}
+            <ScrollArea className=" w-full pr-4">
               {
                 roomState?.users
                 && roomState.users.length > 0
@@ -108,6 +120,8 @@ const Room = reatomComponent(() => {
                     )
               }
             </ScrollArea>
+
+            {isHost() && <StartGameButton />}
           </CardContent>
         </Card>
       </div>
