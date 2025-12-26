@@ -41,7 +41,7 @@ const Room = reatomComponent(() => {
       console.log(error)
     }
   })
-
+  console.log(roomState)
   return (
     <div className="container mx-auto min-h-screen relative p-4">
       <div className="absolute top-4 left-4">
@@ -58,7 +58,7 @@ const Room = reatomComponent(() => {
               </div>
               <Badge variant="secondary" className="text-sm px-3 py-1 gap-2">
                 <Users size={16} />
-                {roomState?.usersCount ?? 0}
+                {roomDataAtom()?.usersCount ?? 0}
               </Badge>
             </div>
           </CardHeader>

@@ -65,6 +65,7 @@ effect(async () => {
     if (response.success) {
       console.log('[join] Setting roomData to:', response.data)
       roomDataAtom.set(response.data)
+      console.log('asd')
       errorAtom.set(null)
     } else {
       const errorMessage = response.error?.message || 'Failed to join'
