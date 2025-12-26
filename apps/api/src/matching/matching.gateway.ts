@@ -45,18 +45,18 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const rawCookies = client.handshake.headers.cookie || ''
       const cookies = parseCookies(rawCookies)
+      const userSession = cookies['user-session']
+      let userId = ''
 
-      let userId = cookies.anonymousUserId
-      let isNew = false
-      if (!userId) {
+      if (!userSession) {
         userId = uuidv4()
-        isNew = true
         this.logger.debug(`New user connected: ${userId}`)
+        client.emit('connection_established', { userId })
       } else {
+        userId = JSON.parse(cookies['user-session'] || '').data
         this.logger.debug(`User connected: ${userId}`)
       }
       client.data.userId = userId
-      client.emit('connection_established', { userId, isNew })
     } catch (e) {
       this.logger.error(`Failed to handle connection: ${e.message}`, e.stack)
       client.disconnect()

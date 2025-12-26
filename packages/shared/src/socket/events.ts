@@ -19,7 +19,6 @@ export type AckCallback<T = undefined> = (response: AckResponse<T> | AckError) =
 // Response data types
 export interface ConnectionData {
   userId: string
-  isNew: boolean
 }
 export interface User {
   userId: string

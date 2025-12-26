@@ -1,5 +1,5 @@
-import type { RoomData, UserDTO } from '@netflix-tinder/shared'
-import { action, atom, effect, withAsync, withLocalStorage, wrap } from '@reatom/core'
+import type { AckError, ConnectionData, RoomData, UserDTO } from '@netflix-tinder/shared'
+import { action, atom, effect, take, withAsync, withCookieStore, withLocalStorage, wrap } from '@reatom/core'
 
 import { socket } from '@/providers/socket'
 import { router } from '@/router'
@@ -13,69 +13,112 @@ export const roomDataAtom = atom<RoomData | null>(null, 'roomDataAtom')
 export const errorAtom = atom<string | null>(null, 'errorAtom')
 export const isPendingAtom = atom(false, 'isPendingAtom')
 
-// Effect to manage WebSocket connection and events based on roomId
-// Must be called within the app's Reatom context (after context.start())
-export function initRoomEffect() {
-  effect(() => {
-    const roomId = roomIdAtom()
+export const userIdAtom = atom<string | null>(null, 'userIdAtom').extend(
+  withCookieStore({
+    key: 'user-session',
+    expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 7 days expiration
+    sameSite: 'lax',
+    path: '/',
+  }),
+)
+const userJoined = action((payload: UserDTO & { usersCount: number }) => payload, 'userJoined')
 
-    if (!roomId) {
+const userLeft = action((payload: { userId: string }) => payload, 'userLeft')
+const socketConnected = action((payload?: undefined) => payload, 'socketConnected')
+const connectionEstablished = action((payload: ConnectionData) => payload, 'connectionEstablished')
+effect(() => {
+  const onUserJoined = (data: UserDTO & { usersCount: number }) => userJoined(data)
+  const onUserLeft = (data: { userId: string }) => userLeft(data)
+  const onConnect = () => socketConnected()
+  const onConnectionEstablished = (data: ConnectionData) => connectionEstablished(data)
+  socket.on('user_joined', wrap(onUserJoined))
+  socket.on('user_left', wrap(onUserLeft))
+  socket.on('connect', wrap(onConnect))
+  socket.on('connection_established', wrap(onConnectionEstablished))
+  return () => {
+    socket.off('user_joined', wrap(onUserJoined)) // Важно отписываться от той же ссылки, что и подписывались
+    socket.off('user_left', wrap(onUserLeft))
+    socket.off('connect', wrap(onConnect))
+  }
+}, 'socketEventHandlersEffect')
+
+if (socket.connected) {
+  socketConnected()
+}
+
+effect(async () => {
+  const roomId = roomIdAtom()
+  if (!roomId) {
+    return
+  }
+
+  if (!socket.connected) {
+    await wrap(take(socketConnected))
+  }
+  try {
+    const response = await wrap(socket.emitWithAck('join_room', { roomId }))
+    console.log('[join] Response:', response)
+    if (response.success) {
+      console.log('[join] Setting roomData to:', response.data)
+      roomDataAtom.set(response.data)
+      errorAtom.set(null)
+    } else {
+      const errorMessage = response.error?.message || 'Failed to join'
+      errorAtom.set(errorMessage)
       roomDataAtom.set(null)
-      return
+      roomIdAtom.set(null)
     }
+  } catch (e: unknown) {
+    const errorMessage = (e as AckError)?.error?.message || 'Failed to join due to network error'
+    errorAtom.set(errorMessage)
+    roomDataAtom.set(null)
+  }
+}, 'roomManagerEffect')
 
-    // Event Handlers
-    const handleUserJoined = wrap((data: UserDTO & { usersCount: number }) => {
-      const current = roomDataAtom()
+effect(
+  async () => {
+    const data = await wrap(take(userJoined)) // Ожидаем вызова userJoined action
+    roomDataAtom.set((current) => {
       if (current) {
-        roomDataAtom.set({
+        return {
           ...current,
-          users: [...current.users.filter((u) => u.userId !== data.userId), data],
+          users: [
+            ...current.users.filter((u) => u.userId !== data.userId),
+            data,
+          ],
           usersCount: data.usersCount,
-        })
+        }
       }
+      return current // Или возвращаем null, если current был null
     })
+  },
+  'handleUserJoinedEffect',
+)
 
-    const handleUserLeft = wrap((data: { userId: string }) => {
-      const current = roomDataAtom()
+effect(
+  async () => {
+    const data = await wrap(take(userLeft)) // Ожидаем вызова userLeft action
+    roomDataAtom.set((current) => {
       if (current) {
         const updatedUsers = current.users.filter((u) => u.userId !== data.userId)
-        roomDataAtom.set({
+        return {
           ...current,
           users: updatedUsers,
           usersCount: updatedUsers.length,
-        })
+        }
       }
+      return current // Или возвращаем null, если current был null
     })
+  },
+  'handleUserLeftEffect',
+)
 
-    const join = async () => {
-      const response = await wrap(socket.emitWithAck('join_room', { roomId }))
+effect(async () => {
+  const data = await wrap(take(connectionEstablished))
+  console.log('[connectionEstablished] Setting userId to:', data)
+  userIdAtom.set(data.userId)
+}, 'handleConnectionEstablishedEffect')
 
-      if (response.success) {
-        console.log('[join] Setting roomData to:', response.data)
-        roomDataAtom.set(response.data)
-      } else {
-        errorAtom.set(response.error?.message || 'Failed to join')
-      }
-    }
-
-    socket.on('user_joined', handleUserJoined)
-    socket.on('user_left', handleUserLeft)
-    socket.on('connect', wrap(join))
-
-    if (socket.connected) {
-      join()
-    }
-
-    return () => {
-      socket.off('user_joined', handleUserJoined)
-      socket.off('user_left', handleUserLeft)
-      socket.off('connect', join)
-    }
-  })
-}
-
-// Actions to Create/Join room (initiate the flow)
 export const createRoomAction = action(async () => {
   console.log('[createRoomAction] Starting...')
   errorAtom.set(null)

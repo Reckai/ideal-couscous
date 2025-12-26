@@ -11,5 +11,4 @@ export const socket: TypedSocket = io(fullUrl, {
   autoConnect: false,
   transports: ['websocket'],
   withCredentials: true,
-
 })

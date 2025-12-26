@@ -38,7 +38,7 @@ const CreateOrJoinForm = reatomComponent(() => {
   const onSubmit = wrap((data: z.infer<typeof validationSchema>) => {
     joinRoomAction(data.inviteCode)
   })
-
+  console.log(error)
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
