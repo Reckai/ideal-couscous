@@ -151,7 +151,7 @@ export const joinRoomAction = action(async (inviteCode: string) => {
     console.log('[joinRoomAction] Setting roomId to:', response.data.inviteCode)
 
     roomDataAtom.set(response.data)
-    return response.data
+    router.navigate(`/room/${inviteCode}`)
   } else {
     const error = response.error.message
     errorAtom.set(error)
