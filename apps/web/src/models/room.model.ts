@@ -49,12 +49,16 @@ if (socket.connected) {
 effect(async () => {
   const roomId = roomIdAtom()
   if (!roomId) {
+    console.log('[join] No room id')
+    setTimeout(() => router.navigate('..', { relative: 'path' }), 0)
     return
   }
-
+  console.log('asd')
   if (!socket.connected) {
     await wrap(take(socketConnected))
+    console.log('[join] Socket connected')
   }
+  console.log('[join] try to joiin')
   try {
     const response = await wrap(socket.emitWithAck('join_room', { roomId }))
     console.log('[join] Response:', response)
@@ -67,11 +71,13 @@ effect(async () => {
       errorAtom.set(errorMessage)
       roomDataAtom.set(null)
       roomIdAtom.set(null)
+      router.navigate('..', { relative: 'path' })
     }
   } catch (e: unknown) {
     const errorMessage = (e as AckError)?.error?.message || 'Failed to join due to network error'
     errorAtom.set(errorMessage)
     roomDataAtom.set(null)
+    roomIdAtom.set(null)
   }
 }, 'roomManagerEffect')
 
