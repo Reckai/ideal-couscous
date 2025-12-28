@@ -20,7 +20,7 @@ export interface CursorPaginatedResult<T> {
 export class MediaRepository {
   private readonly logger = new Logger(MediaRepository.name)
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAllWithCursor(
     params: MediaQueryDto,
@@ -151,6 +151,22 @@ export class MediaRepository {
       })
     } catch (error) {
       this.logger.error(`Filed to find media by title: ${error.message}`)
+      throw error
+    }
+  }
+
+
+  async findManyByIds(ids: string[]): Promise<Media[]> {
+    try {
+      return await this.prisma.media.findMany({
+        where: {
+          id: {
+            in: ids
+          }
+        }
+      })
+    } catch (error) {
+      this.logger.error(`Filed to find medias by ids: ${error.message}`)
       throw error
     }
   }

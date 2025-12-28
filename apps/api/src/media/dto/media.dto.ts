@@ -1,7 +1,7 @@
 import type { Media } from 'generated/prisma'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
+import { ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator'
 
 export class MediaResponseDTO {
   @ApiProperty({ description: 'uuid-here' })
@@ -50,6 +50,13 @@ export class CreateMediaDTO {
   @IsString()
   @IsOptional()
   TMDBLink: string
+}
+
+export class GetAnimeBatchDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsUUID('4', { each: true })
+  ids: string[]
 }
 
 export class MediaQueryDto {

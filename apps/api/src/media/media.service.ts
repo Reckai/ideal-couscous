@@ -5,7 +5,7 @@ import { MediaRepository } from './repositories/media.repository'
 
 @Injectable()
 export class MediaService {
-  constructor(private readonly mediaRepository: MediaRepository) {}
+  constructor(private readonly mediaRepository: MediaRepository) { }
 
   async findAll(query: MediaQueryDto): Promise<MediaListResponseDto> {
     const result = await this.mediaRepository.findAllWithCursor(query)
@@ -26,4 +26,14 @@ export class MediaService {
     }
     return MediaDto.fromPrisma(media)
   }
+
+
+  async findByIds(ids: string[]): Promise<MediaDto[]> {
+    const result = await this.mediaRepository.findManyByIds(ids)
+    if (!result) {
+      throw new NotFoundException(`Smt weng wrong`)
+    }
+    return [...result.map((media) => MediaDto.fromPrisma(media))]
+  }
+
 }
