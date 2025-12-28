@@ -1,4 +1,4 @@
-import type { AckError, ConnectionData, RoomData, UserDTO } from '@netflix-tinder/shared'
+import type { ConnectionData, RoomData, UserDTO } from '@netflix-tinder/shared'
 import { action, atom, computed, effect, take, withAsync, withCookieStore, withLocalStorage, wrap } from '@reatom/core'
 
 import { socket } from '@/providers/socket'
@@ -16,7 +16,7 @@ export const isPendingAtom = atom(false, 'isPendingAtom')
 export const userIdAtom = atom<string | null>(null, 'userIdAtom').extend(
   withCookieStore({
     key: 'user-session',
-    expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 7 days expiration
+    expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
     sameSite: 'lax',
     path: '/',
   }),
@@ -26,19 +26,24 @@ const userJoined = action((payload: UserDTO & { usersCount: number }) => payload
 const userLeft = action((payload: { userId: string }) => payload, 'userLeft')
 const socketConnected = action((payload?: undefined) => payload, 'socketConnected')
 const connectionEstablished = action((payload: ConnectionData) => payload, 'connectionEstablished')
+const syncState = action((payload: RoomData) => payload, 'syncState')
 effect(() => {
   const onUserJoined = (data: UserDTO & { usersCount: number }) => userJoined(data)
   const onUserLeft = (data: { userId: string }) => userLeft(data)
   const onConnect = () => socketConnected()
   const onConnectionEstablished = (data: ConnectionData) => connectionEstablished(data)
+  const onSyncState = (data: RoomData) => syncState(data)
+
   socket.on('user_joined', wrap(onUserJoined))
   socket.on('user_left', wrap(onUserLeft))
   socket.on('connect', wrap(onConnect))
   socket.on('connection_established', wrap(onConnectionEstablished))
+  socket.on('sync_state', wrap(onSyncState))
   return () => {
     socket.off('user_joined', wrap(onUserJoined)) // Важно отписываться от той же ссылки, что и подписывались
     socket.off('user_left', wrap(onUserLeft))
     socket.off('connect', wrap(onConnect))
+    socket.off('sync_state', wrap(onSyncState))
   }
 }, 'socketEventHandlersEffect')
 
@@ -47,40 +52,11 @@ if (socket.connected) {
 }
 
 effect(async () => {
-  const roomId = roomIdAtom()
-  if (!roomId) {
-    console.log('[join] No room id')
-    setTimeout(() => router.navigate('..', { relative: 'path' }), 0)
-    return
-  }
-  console.log('asd')
-  if (!socket.connected) {
-    await wrap(take(socketConnected))
-    console.log('[join] Socket connected')
-  }
-  console.log('[join] try to joiin')
-  try {
-    const response = await wrap(socket.emitWithAck('join_room', { roomId }))
-    console.log('[join] Response:', response)
-    if (response.success) {
-      console.log('[join] Setting roomData to:', response.data)
-      roomDataAtom.set(response.data)
-      console.log('asd')
-      errorAtom.set(null)
-    } else {
-      const errorMessage = response.error?.message || 'Failed to join'
-      errorAtom.set(errorMessage)
-      roomDataAtom.set(null)
-      roomIdAtom.set(null)
-      router.navigate('..', { relative: 'path' })
-    }
-  } catch (e: unknown) {
-    const errorMessage = (e as AckError)?.error?.message || 'Failed to join due to network error'
-    errorAtom.set(errorMessage)
-    roomDataAtom.set(null)
-    roomIdAtom.set(null)
-  }
-}, 'roomManagerEffect')
+  const data = await wrap(take(syncState))
+  console.log('[syncState] Received data:', data)
+  roomDataAtom.set(data)
+  roomIdAtom.set(data.inviteCode)
+}, 'handleSyncStateEffect')
 
 effect(
   async () => {
