@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-// Импорты shadcn компонентов
+
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-// Импорты атомов
+
 import { isHost, leaveRoomAction, roomDataAtom, roomIdAtom } from '@/models/room.model'
 import { InviteCodeCoppier } from './components/InviteCodeCoppier'
 import { StartGameButton } from './components/StartGameButton'
@@ -121,7 +121,7 @@ const Room = reatomComponent(() => {
               }
             </ScrollArea>
 
-            {isHost() && <StartGameButton />}
+            {isHost() && roomState?.usersCount === 2 && <StartGameButton />}
           </CardContent>
         </Card>
       </div>

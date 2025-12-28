@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import * as cookieParser from 'cookie-parser'
 import { config } from 'dotenv'
 import { AppModule } from './app.module'
+import { RedisIoAdapter } from './common/adapters/redis.adapter'
 
 config()
 
@@ -17,6 +18,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   })
+
+  const redisIoAdapter = new RedisIoAdapter(app)
+  await redisIoAdapter.connectToRedis()
+  app.useWebSocketAdapter(redisIoAdapter)
 
   // Cookie parser for AnonymousUserGuard (MVP v1)
   app.use(cookieParser())
