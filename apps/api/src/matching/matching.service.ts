@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
-import { RoomData } from '@netflix-tinder/shared'
+import { BaseRoomData, RoomData, RoomStatus as SharedRoomStatus } from '@netflix-tinder/shared'
 import { RoomStatus } from 'generated/prisma'
 import { customAlphabet } from 'nanoid'
 
@@ -98,7 +98,12 @@ export class MatchingService {
       await this.roomCache.initRoom(roomId, userId, nickName)
       const users = await this.roomCache.getUsersInRoom(roomId)
 
-      return { inviteCode: roomId, usersCount: users.length, users: users.map((user) => ({ ...user, isHost: true })) }
+      return {
+        inviteCode: roomId,
+        usersCount: users.length,
+        users: users.map((user) => ({ ...user, isHost: true })),
+        status: 'WAITING',
+      }
     } catch (error) {
       throw new Error(`Error on creating room:${error}`)
     }
@@ -118,6 +123,13 @@ export class MatchingService {
     if (!roomExist) {
       throw new NotFoundException(`Room with id ${roomId} not found`)
     }
+
+    const status = await this.roomCache.getRoomStatus(roomId)
+
+    if (status !== 'WAITING') {
+      throw new BadRequestException('Room has non waiting status')
+    }
+
     const userCount = await this.roomCache.getRoomUserCount(roomId)
     if (userCount >= 2) {
       throw new BadRequestException(`Room is full`)
@@ -129,16 +141,20 @@ export class MatchingService {
     await this.roomCache.addUserToRoom(roomId, userId, nickName)
     const users = await this.roomCache.getUsersInRoom(roomId)
     const hostId = await this.roomCache.getHostId(roomId)
+
     return {
       users: users.map((user) => ({ ...user, isHost: user.userId === hostId })),
       usersCount: users.length,
       inviteCode: roomId,
+      status: status as 'WAITING',
     }
   }
 
-  async getRoomData(roomId: string): Promise<RoomData> {
+  async getRoomData(roomId: string): Promise<BaseRoomData> {
     const users = await this.roomCache.getUsersInRoom(roomId)
     const hostId = await this.roomCache.getHostId(roomId)
+    const status = await this.roomCache.getRoomStatus(roomId)
+
     return {
       users: users.map((user) => ({
         ...user,
@@ -146,6 +162,7 @@ export class MatchingService {
       })),
       usersCount: users.length,
       inviteCode: roomId,
+      status: status as SharedRoomStatus,
     }
   }
 
@@ -300,6 +317,44 @@ export class MatchingService {
 
     // Возвращаем в том же порядке что в pool
     return mediaIds.map((id) => media.find((m) => m.id === id))
+  }
+
+  async getSnapshotOfRoom(roomId: string): Promise<RoomData> {
+    const status = await this.roomCache.getRoomStatus(roomId)
+    const basicData = await this.getRoomData(roomId)
+
+    switch (status) {
+      case 'WAITING':
+        return {
+          ...basicData,
+          status: 'WAITING',
+        }
+      case 'SELECTING': {
+        const selectedAnime = await this.roomCache.getRoomDraft(roomId)
+        return {
+          ...basicData,
+          selectedAnime,
+          status: 'SELECTING',
+        }
+      }
+      case 'READY':
+      {
+        const selectedAnime = await this.roomCache.getRoomDraft(roomId)
+        return {
+          ...basicData,
+          selectedAnime,
+          status: 'READY',
+        }
+      }
+      case 'MATCHED':
+        return {
+          ...basicData,
+          status: 'MATCHED',
+          matchId: '123',
+        }
+      default:
+        throw new NotFoundException('Room not found')
+    }
   }
 
   private compareAndRecreateNickName(nickNameInRoom: string, nickName: string) {

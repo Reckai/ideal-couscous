@@ -29,11 +29,38 @@ export interface UserDTO {
   nickName: string
   isHost: boolean
 }
-export interface RoomData {
+// Room status types (mirrors Prisma enum but decoupled)
+export type RoomStatus = 'WAITING' | 'SELECTING' | 'SWIPING' | 'MATCHED' | 'CANCELLED' | 'READY'
+
+export interface BaseRoomData {
   inviteCode: string
   usersCount: number
   users: UserDTO[]
+  status: RoomStatus
+  selectedAnime?: string[]
 }
+
+interface WaitingRoomState extends BaseRoomData {
+  status: 'WAITING'
+}
+interface SelectingRoomState extends BaseRoomData {
+  status: 'SELECTING' | 'READY'
+  selectedAnime: string[]
+}
+interface SwipingRoomState extends BaseRoomData {
+  status: 'SWIPING'
+  currentMediaIndex: number
+  mediaQueue: string[]
+}
+interface MatchedRoomState extends BaseRoomData {
+  status: 'MATCHED'
+  matchId: string
+}
+export type RoomData
+  = | WaitingRoomState
+    | SelectingRoomState
+    | SwipingRoomState
+    | MatchedRoomState
 
 export interface AnimeAddedData {
   mediaId: string
@@ -46,6 +73,7 @@ export interface ServerToClientEvents {
   user_joined: (data: UserDTO & { usersCount: number }) => void
   user_left: (data: { userId: string }) => void
   anime_added: (data: AnimeAddedData) => void
+  sync_state: (data: RoomData) => void
 }
 
 // Client -> Server events (with acknowledgement callbacks)

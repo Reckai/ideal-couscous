@@ -61,6 +61,8 @@ implements OnGatewayConnection, OnGatewayDisconnect {
           const roomId = await this.matchingService.getUserRoomId(userId)
           await client.join(roomId)
           client.data.roomId = roomId
+          const roomData = await this.matchingService.getSnapshotOfRoom(roomId)
+          client.emit('sync_state', roomData)
         }
       }
       client.data.userId = userId

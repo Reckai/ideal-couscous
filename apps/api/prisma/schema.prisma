@@ -101,7 +101,6 @@ enum RoomStatus {
   READY          // Оба выбрали, готовы свайпать
   SWIPING        // Идет процесс свайпинга
   MATCHED        // Нашли совпадение
-  EXPIRED        // Истек срок (TTL)
   CANCELLED      // Кто-то вышел
 }
 enum MatchStatus {

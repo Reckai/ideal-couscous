@@ -392,6 +392,20 @@ export class RoomCacheRepository {
     }
   }
 
+  async getRoomDraft(roomId: string): Promise<string[]> {
+    const key = this.KEYS.roomDraft(roomId)
+    try {
+      const draft = await this.redis.smembers(key)
+      return draft
+    } catch (error) {
+      this.logger.error(
+        `Failed to get room draft: ${error.message}`,
+        error.stack,
+      )
+      throw error
+    }
+  }
+
   /**
    * Продлить TTL всех ключей комнаты
    */
