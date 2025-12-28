@@ -30,6 +30,8 @@ export class RoomCacheRepository {
     mediaPool: (roomId: string) => `room:${roomId}:media_pool`,
     swipes: (roomId: string) => `room:${roomId}:swipes`,
     users: (roomId: string) => `room:${roomId}:users`,
+    userInRoom: (userId: string) => `user:${userId}:room`,
+    userStatus: (roomId: string, userId: string) => `room:${roomId}:user:${userId}:status`,
   }
 
   constructor(private readonly redis: RedisService) { }
@@ -90,6 +92,17 @@ export class RoomCacheRepository {
     const key = this.KEYS.users(roomId)
     const result = await this.redis.hexists(key, userId)
     return result === 1
+  }
+
+  async markUserAsDisconnected(roomId: string, userId: string): Promise<void> {
+    const key = this.KEYS.userStatus(roomId, userId)
+    await this.redis.set(key, 'disconnecting', 'EX', 30)
+  }
+
+  async isUserDisconnected(roomId: string, userId: string): Promise<boolean> {
+    const key = this.KEYS.userStatus(roomId, userId)
+    const result = await this.redis.get(key)
+    return result === 'disconnecting'
   }
 
   /**
@@ -314,6 +327,7 @@ export class RoomCacheRepository {
   async removeUserFromRoom(roomId: string, userId: string): Promise<void> {
     const key = this.KEYS.users(roomId)
     await this.redis.hdel(key, userId)
+    await this.redis.del(this.KEYS.userInRoom(userId))
   }
 
   async addUserToRoom(roomId: string, userId: string, nickName: string): Promise<void> {
@@ -324,6 +338,11 @@ export class RoomCacheRepository {
     }
     await this.redis.hset(key, userId, JSON.stringify(userData))
     await this.redis.expire(key, this.ROOM_TTL)
+    await this.redis.set(this.KEYS.userInRoom(userId), roomId)
+  }
+
+  async getRoomIdByUserId(userId: string): Promise<string> {
+    return this.redis.get(this.KEYS.userInRoom(userId))
   }
 
   /**
@@ -359,6 +378,7 @@ export class RoomCacheRepository {
         this.KEYS.roomDraft(roomId),
         this.KEYS.mediaPool(roomId),
         this.KEYS.swipes(roomId),
+        this.KEYS.users(roomId),
       ]
 
       await this.redis.del(...keys)

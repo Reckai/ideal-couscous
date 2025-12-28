@@ -11,6 +11,7 @@ import { RoomData } from '@netflix-tinder/shared'
 import { RoomStatus } from 'generated/prisma'
 import { customAlphabet } from 'nanoid'
 
+import { DisconnectTimerService } from 'src/room/services/disconnectTime.service'
 import { PrismaService } from '../Prisma/prisma.service'
 import {
   RoomCacheRepository,
@@ -18,7 +19,6 @@ import {
 } from '../room/repositories'
 import { SwipeAction } from './dto/swipes.dto'
 import { MatchingCacheRepository } from './repositories/matching-cache.repository'
-import { User } from './types/user'
 
 @Injectable()
 export class MatchingService {
@@ -27,6 +27,7 @@ export class MatchingService {
     private readonly prisma: PrismaService,
     private readonly roomRepo: RoomRepository,
     private readonly roomCache: RoomCacheRepository,
+    private readonly disconnectTimerService: DisconnectTimerService,
     private readonly matchingCache: MatchingCacheRepository,
   ) { }
 
@@ -105,6 +106,10 @@ export class MatchingService {
 
   async removeUserFromRoom(roomId: string, userId: string) {
     await this.roomCache.removeUserFromRoom(roomId, userId)
+    const usersInRoom = await this.roomCache.getUsersInRoom(roomId)
+    if (usersInRoom.length === 0) {
+      await this.roomCache.deleteRoomData(roomId)
+    }
   }
 
   async addUserToRoom(roomId: string, userId: string): Promise<RoomData> {
@@ -142,6 +147,20 @@ export class MatchingService {
       usersCount: users.length,
       inviteCode: roomId,
     }
+  }
+
+  async checkUserConnected(userId: string) {
+    const roomId = await this.roomCache.getRoomIdByUserId(userId)
+    if
+    (!roomId)
+      return false
+    const socketId = `${roomId}_${userId}`
+    await this.disconnectTimerService.clearTimer(socketId)
+    return true
+  }
+
+  async getUserRoomId(userId: string) {
+    return await this.roomCache.getRoomIdByUserId(userId)
   }
 
   private readonly animals = [

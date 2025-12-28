@@ -19,6 +19,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { parse as parseCookies } from 'cookie'
+import { DisconnectTimerService } from 'src/room/services/disconnectTime.service'
 import { v4 as uuidv4 } from 'uuid'
 import { MatchingService } from './matching.service'
 
@@ -39,9 +40,9 @@ implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(MatchingGateway.name)
 
-  constructor(private readonly matchingService: MatchingService) { }
+  constructor(private readonly matchingService: MatchingService, private readonly disconnectTimerService: DisconnectTimerService) { }
 
-  handleConnection(client: TypedSocket) {
+  async handleConnection(client: TypedSocket) {
     try {
       const rawCookies = client.handshake.headers.cookie || ''
       const cookies = parseCookies(rawCookies)
@@ -55,6 +56,12 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       } else {
         userId = JSON.parse(cookies['user-session'] || '').data
         this.logger.debug(`User connected: ${userId}`)
+        const userConnected = await this.matchingService.checkUserConnected(userId)
+        if (userConnected) {
+          const roomId = await this.matchingService.getUserRoomId(userId)
+          await client.join(roomId)
+          client.data.roomId = roomId
+        }
       }
       client.data.userId = userId
     } catch (e) {
@@ -63,14 +70,21 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: TypedSocket) {
+  async handleDisconnect(client: TypedSocket) {
     const { userId, roomId } = client.data
     this.logger.debug(`Disconnecting client ${client.id}. Data: ${JSON.stringify(client.data)}`)
 
     if (roomId) {
       this.logger.log(`User ${userId} disconnected from room ${roomId}`)
-      this.matchingService.removeUserFromRoom(roomId, userId)
-      this.server.to(roomId).emit('user_left', { userId })
+      const socketId = `${roomId}_${userId}`
+      await this.disconnectTimerService.setTimer(socketId, async () => {
+        try {
+          await this.matchingService.removeUserFromRoom(roomId, userId)
+          this.server.to(roomId).emit('user_left', { userId })
+        } catch (error) {
+          this.logger.error(`Error in disconnect timer for ${userId}: ${error.message}`)
+        }
+      })
     }
   }
 
