@@ -1,5 +1,5 @@
 import type { ConnectionData, RoomData, UserDTO } from '@netflix-tinder/shared'
-import { action, atom, computed, effect, take, withAsync, withCookieStore, withLocalStorage, wrap } from '@reatom/core'
+import { action, atom, computed, effect, getCalls, take, withAsync, withCookieStore, withLocalStorage, wrap } from '@reatom/core'
 
 import { socket } from '@/providers/socket'
 import { router } from '@/router'
@@ -52,10 +52,11 @@ if (socket.connected) {
 }
 
 effect(async () => {
-  const data = await wrap(take(syncState))
-  console.log('[syncState] Received data:', data)
-  roomDataAtom.set(data)
-  roomIdAtom.set(data.inviteCode)
+  getCalls(syncState).forEach(({ payload: data }) => {
+    console.log('[syncState] Received data:', data)
+    roomDataAtom.set(data)
+    roomIdAtom.set(data.inviteCode)
+  })
 }, 'handleSyncStateEffect')
 
 effect(
@@ -170,3 +171,11 @@ export const isHost = computed(() => {
   const roomData = roomDataAtom()
   return roomData?.users.find((user) => user.userId === userIdAtom())?.isHost ?? false
 })
+
+export const changeStatusToSelecting = action(async () => {
+  console.log('asd')
+  const roomId = roomIdAtom()
+  if (!roomId)
+    return
+  await wrap(socket.emitWithAck('start_selecting', { roomId }))
+}, 'changeStatus').extend(withAsync())
