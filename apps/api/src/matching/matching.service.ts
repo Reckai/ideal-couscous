@@ -364,4 +364,18 @@ export class MatchingService {
     const newNickName = this.createNickName()
     return this.compareAndRecreateNickName(nickNameInRoom, newNickName)
   }
+
+  async startSelections(roomId: string, userId: string): Promise<RoomData> {
+    const [hostId, status, usersCount] = await Promise.all([
+      this.roomCache.getHostId(roomId),
+      this.roomCache.getRoomStatus(roomId),
+      this.roomCache.getRoomUserCount(roomId),
+    ])
+    if (hostId !== userId || status !== 'WAITING' || usersCount < 2) {
+      throw new BadRequestException('You can`t start selection in this room')
+    }
+
+    await this.roomCache.updateRoomStatus(roomId, 'SELECTING')
+    return this.getSnapshotOfRoom(roomId)
+  }
 }

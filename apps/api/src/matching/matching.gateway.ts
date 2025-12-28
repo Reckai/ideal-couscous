@@ -292,4 +292,22 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
   }
+
+  @SubscribeMessage('start_selecting')
+  async handleStartSelecting(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { roomId: string },
+  ) {
+    const selectionRoomId = data.roomId
+    if (!selectionRoomId || !client.data.userId) {
+      return {
+        success: false,
+        error: { message: 'Failed to start Selection', code: 'START_SELECTIONS_FAILED' },
+      }
+    }
+
+    const response = await this.matchingService.startSelections(selectionRoomId, client.data.userId)
+    this.server.to(client.data.roomId).emit('sync_state', response)
+    return { success: true, data: undefined }
+  }
 }
