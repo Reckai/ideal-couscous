@@ -1,0 +1,40 @@
+import { HttpService } from '@nestjs/axios'
+import { Injectable, Logger } from '@nestjs/common'
+import { firstValueFrom } from 'rxjs'
+import { MediaEntityDTO } from 'src/media/dto/media.dto'
+
+interface TmdbRawMedia { id: number, poster_path: string | null, title: string }
+interface TmdbRawResponse {
+  data: {
+    results: Array<TmdbRawMedia>
+  }
+}
+
+@Injectable()
+export class TmdbAdapter {
+  private readonly logger = new Logger(TmdbAdapter.name)
+  private readonly TMDB_API = 'https://api.themoviedb.org/3'
+  private readonly API_KEY = process.env.TMDB_API_KEY
+  constructor(private readonly httpService: HttpService) {}
+  async fetchAndAdaptPage(page: number): Promise<MediaEntityDTO[]> {
+    try {
+      const url = `${this.TMDB_API}/discover/movie?api_key=${this.API_KEY}&sort_by=popularity.desc&language=ru-RU&page=${page}`
+
+      const reposnse: TmdbRawResponse = await firstValueFrom(this.httpService.get(url))
+      return reposnse.data.results.filter((media) => media.poster_path !== null).map((media) => this.toDomain(media))
+    } catch (error) {
+      this.logger.error(`Ошибка при скачивании страницы ${page}: ${error.message}`)
+      throw error
+    }
+  }
+
+  private toDomain(media: TmdbRawMedia): MediaEntityDTO {
+    const baseTmdbLink = 'https://www.themoviedb.org/movie/'
+    return {
+      tmdbId: String(media.id),
+      posterPath: media.poster_path,
+      TMDBLink: `${baseTmdbLink}${media.id}`,
+      title: media.title,
+    }
+  }
+}

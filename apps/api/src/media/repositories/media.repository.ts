@@ -1,6 +1,6 @@
-import type { Media, Prisma } from 'generated/prisma'
-import type { MediaQueryDto } from '../dto/media.dto'
+import type { MediaEntityDTO, MediaQueryDto } from '../dto/media.dto'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
+import { Media, Prisma } from 'generated/prisma'
 import { PrismaService } from '../../Prisma/prisma.service'
 
 import { DEFAULT_LIMIT, MAX_LIMIT, MIN_LIMIT } from '../consts'
@@ -155,19 +155,49 @@ export class MediaRepository {
     }
   }
 
-
   async findManyByIds(ids: string[]): Promise<Media[]> {
     try {
       return await this.prisma.media.findMany({
         where: {
           id: {
-            in: ids
-          }
-        }
+            in: ids,
+          },
+        },
       })
     } catch (error) {
       this.logger.error(`Filed to find medias by ids: ${error.message}`)
       throw error
+    }
+  }
+
+  async bulkUpsert(animes: MediaEntityDTO[]) {
+    if (animes.length === 0)
+      return
+
+    const values = animes.map((anime) =>
+      Prisma.sql`(
+        gen_random_uuid(), 
+        ${anime.tmdbId}, 
+        ${anime.title}, 
+        ${anime.posterPath}, 
+        ${anime.TMDBLink}, 
+        NOW(), 
+        NOW()
+      )`,
+    )
+    try {
+      const result = await this.prisma.$executeRaw`
+    INSERT INTO "media" ("id", "tmdb_id", "title", "poster_path", "tmdb_link", "created_at", "updated_at")
+    VALUES ${Prisma.join(values)}
+    ON CONFLICT ("tmdb_id")
+    DO UPDATE SET
+    "title" = EXCLUDED."title",
+    "poster_path" = EXCLUDED."poster_path",
+    "updated_at" = NOW()
+    `
+      return result
+    } catch (error) {
+      throw new Error(`Bulk upsert failed: ${error.message}`)
     }
   }
 }

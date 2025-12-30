@@ -19,7 +19,7 @@ model Media {
   id        String   @id @default(uuid())
   posterPath String  @map("poster_path")
   title     String
-  tmdbId    String?  @map("tmdb_id")
+  tmdbId    String? @unique  @map("tmdb_id")
   TMDBLink  String?  @map("tmdb_link")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")

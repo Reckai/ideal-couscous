@@ -112,3 +112,10 @@ export class MediaListResponseDto {
   data: MediaDto[]
   pagination: CursorPaginationDto
 }
+
+export class MediaEntityDTO {
+  posterPath: string
+  title: string
+  tmdbId: string
+  TMDBLink: string
+}
