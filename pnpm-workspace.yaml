@@ -39,6 +39,7 @@ catalog:
   '@vercel/analytics': ^1.5.0
   '@vitejs/plugin-react': ^5.1.1
   autoprefixer: ^10.4.23
+  axios: ^1.13.2
   class-transformer: ^0.5.1
   class-validator: ^0.14.2
   class-variance-authority: 0.7.1
@@ -93,8 +94,6 @@ catalog:
 catalogMode: prefer
 
 catalogs:
-  conflicts_@types/node_h20_3_1:
-    '@types/node': ^20.3.1
   conflicts_typescript_h5:
     typescript: ^5
   conflicts_typescript_h5_1_3:

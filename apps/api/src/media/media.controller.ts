@@ -1,5 +1,5 @@
-import type { GetAnimeBatchDto, MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { GetAnimeBatchDto, MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
 import { MediaService } from './media.service'
 
 @Controller('media')
@@ -15,7 +15,6 @@ export class MediaController {
   async getAnimeBatch(@Body() dto: GetAnimeBatchDto): Promise<MediaDto[]> {
     return this.mediaService.findByIds(dto.ids)
   }
-
 
   @Get(':id')
   async findById(@Param('id') id: string): Promise<MediaDto> {

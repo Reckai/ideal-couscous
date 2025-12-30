@@ -20,6 +20,7 @@
     "@reatom/core": "catalog:",
     "@reatom/react": "catalog:",
     "@tailwindcss/postcss": "catalog:",
+    "axios": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "i18next": "catalog:",
@@ -39,7 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@types/node": "catalog:conflicts_@types/node_h20_3_1",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
