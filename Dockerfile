@@ -10,11 +10,13 @@ WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
 
-# Build API first
-RUN pnpm run build --filter=api
+# Build API
+WORKDIR /app/apps/api
+RUN pnpm run build
 
 # Prepare production bundle using pnpm deploy
-RUN pnpm --filter=api deploy --prod /prod/api
+WORKDIR /app
+RUN pnpm --filter api deploy --prod /prod/api
 
 # Copy the built dist folder and prisma schema
 RUN cp -r /app/apps/api/dist /prod/api/dist
