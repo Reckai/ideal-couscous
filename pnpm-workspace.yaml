@@ -110,4 +110,4 @@ overrides:
 
 shellEmulator: true
 
-trustPolicy: no-downgrade
+trustPolicy: relaxed
