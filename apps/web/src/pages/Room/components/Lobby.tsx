@@ -1,6 +1,6 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
-import { LogOut, Users } from 'lucide-react'
+import { Crown, LogOut, Users } from 'lucide-react' // 1. Добавили иконку Crown
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -63,29 +63,49 @@ export const Lobby = reatomComponent(() => {
       <Separator />
 
       <CardContent className="pt-6 flex flex-col gap-6">
-        {/* Invite Code Section */}
         {isHost() && <InviteCodeCoppier />}
-        <ScrollArea className=" w-full pr-4">
-          {
-            roomState?.users
+
+        <ScrollArea className="w-full pr-4">
+          {roomState?.users
             && roomState.users.length > 0
-              ? (
-                  <div className="flex flex-col gap-3">
-                    {roomState.users.map((user) => (
+            ? (
+                <div className="flex flex-col gap-3">
+                  {roomState.users.map((user) => {
+                    const isHostUser = roomState.users.filter((user) => user.isHost)[0]!.userId === user.userId
+
+                    return (
                       <div
                         key={user.userId}
                         className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
                       >
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                            {user.nickName.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                              {user.nickName.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* 3. Дополнительный индикатор (абсолютный) на аватаре, если нужно */}
+                          {isHostUser && (
+                            <div className="absolute -top-1 -right-1 bg-background rounded-full p-0.5 shadow-sm">
+                              <Crown size={12} className="text-yellow-500 fill-yellow-500" />
+                            </div>
+                          )}
+                        </div>
 
                         <div className="flex flex-col">
-                          <span className="font-medium text-sm leading-none">
-                            {user.nickName}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm leading-none">
+                              {user.nickName}
+                            </span>
+                            {/* 4. Явный индикатор рядом с именем */}
+                            {isHostUser && (
+                              <Crown
+                                size={14}
+                                className="text-yellow-500 fill-yellow-500/20"
+                                aria-label="Host"
+                              />
+                            )}
+                          </div>
                           <span className="text-xs text-muted-foreground mt-1">
                             ID:
                             {' '}
@@ -94,16 +114,16 @@ export const Lobby = reatomComponent(() => {
                           </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )
-              : (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-10">
-                    <Users className="h-10 w-10 mb-2 opacity-20" />
-                    <p>Ожидание участников...</p>
-                  </div>
-                )
-          }
+                    )
+                  })}
+                </div>
+              )
+            : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-10">
+                  <Users className="h-10 w-10 mb-2 opacity-20" />
+                  <p>Ожидание участников...</p>
+                </div>
+              )}
         </ScrollArea>
 
         {isHost() && roomState?.usersCount === 2 && <StartGameButton />}
