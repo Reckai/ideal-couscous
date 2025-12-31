@@ -10,8 +10,11 @@ WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
 
-# Build API
+# Generate Prisma Client BEFORE build (code imports from generated/prisma)
 WORKDIR /app/apps/api
+RUN npx prisma generate
+
+# Build API
 RUN pnpm run build
 
 # Prepare production bundle using pnpm deploy
@@ -22,7 +25,7 @@ RUN pnpm --filter api deploy --prod /prod/api
 RUN cp -r /app/apps/api/dist /prod/api/dist
 RUN cp -r /app/apps/api/prisma /prod/api/prisma
 
-# Generate Prisma Client in the production bundle
+# Re-generate Prisma Client in the production bundle
 WORKDIR /prod/api
 RUN npx prisma generate
 

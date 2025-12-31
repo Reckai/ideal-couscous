@@ -39,6 +39,7 @@
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
     "ioredis": "catalog:",
+    "nanoid": "catalog:",
     "redis": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
