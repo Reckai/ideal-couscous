@@ -21,7 +21,7 @@ RUN pnpm run build
 
 # Prepare production bundle using pnpm deploy
 WORKDIR /app
-RUN pnpm --filter api deploy --prod /prod/api
+RUN pnpm --filter api deploy --prod --legacy /prod/api
 
 # Copy the built dist folder and prisma schema
 RUN cp -r /app/apps/api/dist /prod/api/dist
