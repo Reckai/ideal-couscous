@@ -10,19 +10,19 @@ WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma Client
-RUN pnpm run db:generate
-
-# Build API
+# Build API first
 RUN pnpm run build --filter=api
 
 # Prepare production bundle using pnpm deploy
-# This creates a folder with the package and its production dependencies isolated
 RUN pnpm --filter=api deploy --prod /prod/api
 
-# Copy the built dist folder (since deploy excludes gitignored files)
-COPY apps/api/dist /prod/api/dist
-COPY apps/api/prisma /prod/api/prisma
+# Copy the built dist folder and prisma schema
+RUN cp -r /app/apps/api/dist /prod/api/dist
+RUN cp -r /app/apps/api/prisma /prod/api/prisma
+
+# Generate Prisma Client in the production bundle
+WORKDIR /prod/api
+RUN npx prisma generate
 
 # Runner stage
 FROM base AS runner
