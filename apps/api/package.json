@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "catalog:",
     "@nestjs/platform-socket.io": "catalog:",
     "@nestjs/schedule": "catalog:",
+    "@nestjs/swagger": "catalog:",
     "@nestjs/websockets": "catalog:",
     "@netflix-tinder/shared": "workspace:*",
     "@prisma/client": "catalog:",
@@ -50,7 +51,6 @@
   "devDependencies": {
     "@nestjs/cli": "catalog:",
     "@nestjs/schematics": "catalog:",
-    "@nestjs/swagger": "catalog:",
     "@nestjs/testing": "catalog:",
     "@types/cookie-parser": "catalog:",
     "@types/express": "catalog:",
