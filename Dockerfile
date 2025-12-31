@@ -10,8 +10,10 @@ WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
 
-# Generate Prisma Client BEFORE build (code imports from generated/prisma)
+# Generate Prisma Client BEFORE build
+# Use dummy DATABASE_URL - prisma generate only needs schema, not actual DB connection
 WORKDIR /app/apps/api
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN npx prisma generate
 
 # Build API
@@ -24,6 +26,7 @@ RUN pnpm --filter api deploy --prod /prod/api
 # Copy the built dist folder and prisma schema
 RUN cp -r /app/apps/api/dist /prod/api/dist
 RUN cp -r /app/apps/api/prisma /prod/api/prisma
+RUN cp -r /app/apps/api/generated /prod/api/generated
 
 # Re-generate Prisma Client in the production bundle
 WORKDIR /prod/api
