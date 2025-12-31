@@ -35,7 +35,8 @@
     "clean:all": "npm run docker:clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules",
     "prepare": "husky",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "typecheck": "cd apps/web && tsc -b && cd ../api && tsc --noEmit"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
@@ -48,7 +49,11 @@
     "typescript": "catalog:"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs}": [
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "bash -c 'npm run typecheck'"
+    ],
+    "*.{js,jsx,mjs}": [
       "eslint --fix"
     ],
     "*.{json,yaml,yml,md}": [

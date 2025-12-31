@@ -27,7 +27,6 @@ export class MediaService {
     return MediaDto.fromPrisma(media)
   }
 
-
   async findByIds(ids: string[]): Promise<MediaDto[]> {
     const result = await this.mediaRepository.findManyByIds(ids)
     if (!result) {
@@ -35,5 +34,4 @@ export class MediaService {
     }
     return [...result.map((media) => MediaDto.fromPrisma(media))]
   }
-
 }

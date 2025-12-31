@@ -61,19 +61,20 @@ effect(async () => {
 
 effect(
   async () => {
-    const data = await wrap(take(userJoined)) // Ожидаем вызова userJoined action
-    roomDataAtom.set((current) => {
-      if (current) {
-        return {
-          ...current,
-          users: [
-            ...current.users.filter((u) => u.userId !== data.userId),
-            data,
-          ],
-          usersCount: data.usersCount,
+    getCalls(userJoined).forEach(({ payload: data }) => {
+      roomDataAtom.set((current) => {
+        if (current) {
+          return {
+            ...current,
+            users: [
+              ...current.users.filter((u) => u.userId !== data.userId),
+              data,
+            ],
+            usersCount: data.usersCount,
+          }
         }
-      }
-      return current // Или возвращаем null, если current был null
+        return current // Или возвращаем null, если current был null
+      })
     })
   },
   'handleUserJoinedEffect',
@@ -81,17 +82,18 @@ effect(
 
 effect(
   async () => {
-    const data = await wrap(take(userLeft)) // Ожидаем вызова userLeft action
-    roomDataAtom.set((current) => {
-      if (current) {
-        const updatedUsers = current.users.filter((u) => u.userId !== data.userId)
-        return {
-          ...current,
-          users: updatedUsers,
-          usersCount: updatedUsers.length,
+    getCalls(userLeft).forEach(({ payload: data }) => {
+      roomDataAtom.set((current) => {
+        if (current) {
+          const updatedUsers = current.users.filter((u) => u.userId !== data.userId)
+          return {
+            ...current,
+            users: updatedUsers,
+            usersCount: updatedUsers.length,
+          }
         }
-      }
-      return current // Или возвращаем null, если current был null
+        return current // Или возвращаем null, если current был null
+      })
     })
   },
   'handleUserLeftEffect',
