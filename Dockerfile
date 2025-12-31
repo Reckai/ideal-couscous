@@ -28,10 +28,6 @@ RUN cp -r /app/apps/api/dist /prod/api/dist
 RUN cp -r /app/apps/api/prisma /prod/api/prisma
 RUN cp -r /app/apps/api/generated /prod/api/generated
 
-# Re-generate Prisma Client in the production bundle
-WORKDIR /prod/api
-RUN ./node_modules/.bin/prisma generate
-
 # Runner stage
 FROM base AS runner
 WORKDIR /app
