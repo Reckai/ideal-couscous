@@ -14,7 +14,7 @@ RUN pnpm install --frozen-lockfile
 # Use dummy DATABASE_URL - prisma generate only needs schema, not actual DB connection
 WORKDIR /app/apps/api
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-RUN npx prisma generate
+RUN pnpm exec prisma generate
 
 # Build API
 RUN pnpm run build
@@ -30,7 +30,7 @@ RUN cp -r /app/apps/api/generated /prod/api/generated
 
 # Re-generate Prisma Client in the production bundle
 WORKDIR /prod/api
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 
 # Runner stage
 FROM base AS runner
