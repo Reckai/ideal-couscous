@@ -74,7 +74,7 @@ export const AnimeSelectingPage = reatomComponent(() => {
 
       <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
         {/* Main Content - Grid */}
-        <main className="flex-1 overflow-y-auto w-full relative" id="scroll-container">
+        <main className="flex-1 overflow-y-auto w-full relative custom-scrollbar" id="scroll-container">
           {isLoadingInitial && animeList.length === 0
             ? (
                 <div className="absolute inset-0 flex items-center justify-center">

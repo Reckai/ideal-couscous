@@ -31,7 +31,7 @@ export const SelectedAnimeList = reatomComponent(({ onClose }: SelectedAnimeList
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {selectedList.length === 0
           ? (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-center p-4">
