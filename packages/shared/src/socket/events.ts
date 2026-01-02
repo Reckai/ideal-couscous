@@ -1,5 +1,8 @@
 export type UserStatus = 'online' | 'offline'
-
+export interface Error {
+  message: string
+  code: string
+}
 // Acknowledgement response types
 export interface AckResponse<T = undefined> {
   success: true
@@ -8,10 +11,7 @@ export interface AckResponse<T = undefined> {
 
 export interface AckError {
   success: false
-  error: {
-    message: string
-    code: string
-  }
+  error: Error
 }
 
 export type AckCallback<T = undefined> = (response: AckResponse<T> | AckError) => void
@@ -75,6 +75,7 @@ export interface ServerToClientEvents {
   anime_added: (data: AnimeAddedData) => void
   sync_state: (data: RoomData) => void
   try_to_join: (data: void) => void
+  error_leave: (data: Error) => void
 }
 
 // Client -> Server events (with acknowledgement callbacks)

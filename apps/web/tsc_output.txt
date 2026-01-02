@@ -1,0 +1,8 @@
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(5,3): error TS2724: '"./animeSelect.model"' has no exported member named 'fetchAnimeAction'. Did you mean 'fetchAnimeListAction'?
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(17,1): error TS6133: 'cn' is declared but its value is never read.
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(19,54): error TS2339: Property 'ctx' does not exist on type '{}'.
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(30,28): error TS2554: Expected 0 arguments, but got 1.
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(38,36): error TS2554: Expected 1 arguments, but got 2.
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(64,62): error TS2554: Expected 1 arguments, but got 2.
+src/pages/Room/AnimeSelect/AnimeSelectingPage.tsx(92,32): error TS7006: Parameter 'anime' implicitly has an 'any' type.
+src/pages/Room/AnimeSelect/components/AnimeCard.tsx(1,10): error TS1484: 'Media' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.

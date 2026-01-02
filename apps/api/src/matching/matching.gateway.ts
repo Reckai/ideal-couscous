@@ -62,6 +62,7 @@ implements OnGatewayConnection, OnGatewayDisconnect {
           const roomId = await this.matchingService.getUserRoomId(userId)
           await client.join(roomId)
           client.data.roomId = roomId
+          console.log(roomId)
           const roomData = await this.matchingService.getSnapshotOfRoom(roomId)
           client.emit('sync_state', roomData)
         } else {
@@ -71,7 +72,8 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.userId = userId
     } catch (e) {
       this.logger.error(`Failed to handle connection: ${e.message}`, e.stack)
-      client.disconnect()
+      // await this.matchingService.clearRoomData(roomId, userId)
+      client.emit('error_leave', { message: e.message, code: e.message })
     }
   }
 

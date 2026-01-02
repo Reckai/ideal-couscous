@@ -113,7 +113,7 @@ export class MatchingService {
     await this.roomCache.removeUserFromRoom(roomId, userId)
     const usersInRoom = await this.roomCache.getUsersInRoom(roomId)
     if (usersInRoom.length === 0) {
-      await this.roomCache.deleteRoomData(roomId)
+      await this.roomCache.deleteRoomData(roomId, userId)
     }
   }
 
@@ -148,6 +148,10 @@ export class MatchingService {
       inviteCode: roomId,
       status: status as 'WAITING',
     }
+  }
+
+  async clearRoomData(roomId: string, userId: string): Promise<void> {
+    await this.roomCache.deleteRoomData(roomId, userId)
   }
 
   async getRoomData(roomId: string): Promise<BaseRoomData> {

@@ -345,6 +345,10 @@ export class RoomCacheRepository {
     return this.redis.get(this.KEYS.userInRoom(userId))
   }
 
+  async clearRoomIdByUserId(userId: string): Promise<void> {
+    await this.redis.del(this.KEYS.userInRoom(userId))
+  }
+
   /**
    * Получить размер media pool
    */
@@ -369,7 +373,7 @@ export class RoomCacheRepository {
   /**
    * Удалить все данные комнаты
    */
-  async deleteRoomData(roomId: string): Promise<void> {
+  async deleteRoomData(roomId: string, userId: string): Promise<void> {
     this.logger.debug(`Deleting all Redis data for room ${roomId}`)
 
     try {
@@ -379,6 +383,7 @@ export class RoomCacheRepository {
         this.KEYS.mediaPool(roomId),
         this.KEYS.swipes(roomId),
         this.KEYS.users(roomId),
+        this.KEYS.userInRoom(userId),
       ]
 
       await this.redis.del(...keys)
