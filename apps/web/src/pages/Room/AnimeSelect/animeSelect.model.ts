@@ -1,7 +1,9 @@
 import type { Media } from './types/media'
 import { action, atom, effect, sleep, withAsync, wrap } from '@reatom/core'
 import axios from 'axios'
+import { toast } from 'sonner'
 import { roomDataAtom } from '@/models/room.model'
+import { socket } from '@/providers/socket'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api',
@@ -17,16 +19,21 @@ export const debouncedSearchQueryAtom = atom<string | null>(null)
 export const isLoadingInitialAtom = atom<boolean>(false)
 export const isLoadingMoreAtom = atom<boolean>(false)
 export const hasInitialFetchedAtom = atom<boolean>(false)
-export const toggleAnimeSelectionAction = action((media: Media) => {
+export const toggleAnimeSelectionAction = action(async (media: Media) => {
   const currentSelected = selectedAnimeListAtom()
   const isSelected = currentSelected.some((item) => item.id === media.id)
 
   if (isSelected) {
     selectedAnimeListAtom.set(currentSelected.filter((item) => item.id !== media.id))
   } else {
-    selectedAnimeListAtom.set([...currentSelected, media])
+    const response = await socket.emitWithAck('add_anime', { mediaId: media.id })
+    if (response.success) {
+      selectedAnimeListAtom.set([...currentSelected, media])
+    } else {
+      toast('Something went wrong')
+    }
   }
-}, 'toggleAnimeSelectionAction')
+}, 'toggleAnimeSelectionAction').extend(withAsync())
 
 export const fetchAnimeListAction = action(async (append: boolean, cursor?: string, search?: string) => {
   const roomData = roomDataAtom()

@@ -225,16 +225,13 @@ implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const isAdded = await this.matchingService.addMediaToDraft(
-        roomId,
         userId,
+        roomId,
         data.mediaId,
       )
 
       if (isAdded) {
         const animeData: AnimeAddedData = { mediaId: data.mediaId, addedBy: userId }
-
-        // Broadcast to all in the room (including sender)
-        this.server.to(roomId).emit('anime_added', animeData)
 
         this.logger.log(`Anime ${data.mediaId} added to room ${roomId}`)
 

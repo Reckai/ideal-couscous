@@ -339,6 +339,7 @@ export class RoomCacheRepository {
     await this.redis.hset(key, userId, JSON.stringify(userData))
     await this.redis.expire(key, this.ROOM_TTL)
     await this.redis.set(this.KEYS.userInRoom(userId), roomId)
+    await this.redis.expire(this.KEYS.userInRoom(userId), this.ROOM_TTL)
   }
 
   async getRoomIdByUserId(userId: string): Promise<string> {
