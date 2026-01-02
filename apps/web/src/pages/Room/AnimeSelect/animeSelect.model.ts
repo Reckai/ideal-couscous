@@ -3,26 +3,20 @@ import { action, atom, effect, sleep, withAsync, wrap } from '@reatom/core'
 import axios from 'axios'
 import { roomDataAtom } from '@/models/room.model'
 
-// API client with Vite env variable
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api',
 })
 
-// Atom for storing fetched anime list
 export const animeListAtom = atom<Media[]>([], 'animeListAtom')
 export const selectedAnimeListAtom = atom<Media[]>([], 'selectedAnimeList')
-// Пагинация
 export const paginationAtom = atom<{ hasMore: boolean, nextCursor?: string } | null>(null)
 
-// Поиск
-export const searchQueryAtom = atom<string>('') // raw input
-export const debouncedSearchQueryAtom = atom<string | null>(null) // после debounce
+export const searchQueryAtom = atom<string>('')
+export const debouncedSearchQueryAtom = atom<string | null>(null)
 
-// Загрузка
 export const isLoadingInitialAtom = atom<boolean>(false)
 export const isLoadingMoreAtom = atom<boolean>(false)
 export const hasInitialFetchedAtom = atom<boolean>(false)
-// Action for fetching anime
 export const toggleAnimeSelectionAction = action((media: Media) => {
   const currentSelected = selectedAnimeListAtom()
   const isSelected = currentSelected.some((item) => item.id === media.id)
@@ -125,7 +119,7 @@ effect(() => {
   paginationAtom.set(null)
   isLoadingInitialAtom.set(false)
   isLoadingMoreAtom.set(false)
-  hasInitialFetchedAtom.set(false) // добавить
-  searchQueryAtom.set('') // добавить
-  debouncedSearchQueryAtom.set('') // добавить
+  hasInitialFetchedAtom.set(false)
+  searchQueryAtom.set('')
+  debouncedSearchQueryAtom.set('')
 }, 'clearEffect')
