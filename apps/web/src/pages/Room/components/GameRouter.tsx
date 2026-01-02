@@ -2,6 +2,7 @@ import { reatomComponent } from '@reatom/react'
 import { Loader2 } from 'lucide-react'
 
 import { roomDataAtom } from '@/models/room.model'
+import { AnimeSelectingPage } from '../AnimeSelect/AnimeSelectingPage'
 import { Lobby } from './Lobby'
 
 export const GameRouter = reatomComponent(() => {
@@ -26,15 +27,7 @@ export const GameRouter = reatomComponent(() => {
 
     case 'SELECTING':
       return (
-        <>
-          <div>SELECTING</div>
-          <div>
-            Selected Anime:
-            {' '}
-            {roomState.selectedAnime?.length && roomState.selectedAnime}
-          </div>
-        </>
-        // TODO: Add Selecting component
+        <AnimeSelectingPage /> // TODO: Add Selecting component
       )
 
     case 'SWIPING':

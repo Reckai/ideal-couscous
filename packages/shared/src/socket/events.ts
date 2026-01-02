@@ -74,6 +74,7 @@ export interface ServerToClientEvents {
   user_left: (data: { userId: string }) => void
   anime_added: (data: AnimeAddedData) => void
   sync_state: (data: RoomData) => void
+  try_to_join: (data: void) => void
 }
 
 // Client -> Server events (with acknowledgement callbacks)

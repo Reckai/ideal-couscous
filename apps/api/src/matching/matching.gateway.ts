@@ -57,12 +57,15 @@ implements OnGatewayConnection, OnGatewayDisconnect {
         userId = JSON.parse(cookies['user-session'] || '').data
         this.logger.debug(`User connected: ${userId}`)
         const userConnected = await this.matchingService.checkUserConnected(userId)
+
         if (userConnected) {
           const roomId = await this.matchingService.getUserRoomId(userId)
           await client.join(roomId)
           client.data.roomId = roomId
           const roomData = await this.matchingService.getSnapshotOfRoom(roomId)
           client.emit('sync_state', roomData)
+        } else {
+          client.emit('try_to_join')
         }
       }
       client.data.userId = userId

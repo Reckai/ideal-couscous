@@ -1,13 +1,31 @@
-// import { roomDataAtom } from "@/models/room.model";
-// import { effect } from "@reatom/core";
-// import axios from 'axios';
-// import { wrap } from "module";
-// const asd = axios.create({
-//     baseURL:process.env.BACKAND_URL || 'http://localhost:4000/api'
-// })
+import type { MediaListResponse } from './types/media'
+import { action, atom, withAsync, wrap } from '@reatom/core'
+import axios from 'axios'
+import { roomDataAtom } from '@/models/room.model'
 
-// // effect(async()=>{
-// //     const roomData = roomDataAtom();
-// //     // if( roomData?.status !== 'SELECTING')return;
-// //     const response = await wrap(asd.post('/batch'))
-// // },'fetchAnimeEffect')
+// API client with Vite env variable
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api',
+})
+
+// Atom for storing fetched anime list
+export const animeListAtom = atom<MediaListResponse | null>(null, 'animeListAtom')
+
+// Action for fetching anime
+export const fetchAnimeAction = action(async () => {
+  const roomData = roomDataAtom()
+
+  if (roomData?.status !== 'SELECTING') {
+    console.log('Room status is not SELECTING, skipping fetch')
+    return
+  }
+
+  const response = await wrap(api.get('/media', {
+    params: { limit: 20 },
+  }))
+
+  console.log('Fetched anime:', response.data)
+  animeListAtom.set(response.data)
+
+  return response.data
+}, 'fetchAnimeAction').extend(withAsync())
