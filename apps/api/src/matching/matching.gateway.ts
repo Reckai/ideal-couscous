@@ -251,6 +251,59 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('delete_anime')
+  async handleDeleteAnime(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { mediaId: string },
+  ) {
+    const { userId, roomId } = client.data
+
+    if (!userId) {
+      return {
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      }
+    }
+
+    if (!roomId) {
+      return {
+        success: false,
+        error: { message: 'User is not in a room', code: 'NOT_IN_ROOM' },
+      }
+    }
+
+    if (!data?.mediaId) {
+      return {
+        success: false,
+        error: { message: 'Media ID is required', code: 'INVALID_PAYLOAD' },
+      }
+    }
+
+    try {
+      const isDeleted = await this.matchingService.deleteMediaFromDraft(
+        userId,
+        roomId,
+        data.mediaId,
+      )
+
+      if (isDeleted) {
+        this.logger.log(`Anime ${data.mediaId} removed from room ${roomId} by user ${userId}`)
+        return { success: true, data: { mediaId: data.mediaId } }
+      } else {
+        return {
+          success: false,
+          error: { message: 'Anime not found in your deck', code: 'NOT_FOUND' },
+        }
+      }
+    } catch (e) {
+      this.logger.error(`Delete anime error: ${e.message}`)
+      return {
+        success: false,
+        error: { message: e.message || 'Failed to delete anime', code: 'DELETE_ANIME_FAILED' },
+      }
+    }
+  }
+
   @SubscribeMessage('leave_room')
   async handleLeaveRoom(
     @ConnectedSocket() client: TypedSocket,

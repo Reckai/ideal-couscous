@@ -227,7 +227,7 @@ export class MatchingService {
     }
 
     try {
-      const result = await this.roomCache.saveUserSelection(roomId, mediaId)
+      const result = await this.roomCache.saveUserSelection(roomId, userId, mediaId)
 
       return result === 1
     } catch (e) {
@@ -236,6 +236,24 @@ export class MatchingService {
       }
       throw e
     }
+  }
+
+  async deleteMediaFromDraft(
+    userId: string,
+    roomId: string,
+    mediaId: string,
+  ): Promise<boolean> {
+    const isMember = await this.roomCache.isUserInRoom(roomId, userId)
+    if (!isMember) {
+      throw new WsException('User is not member of the room')
+    }
+    const roomStatus = await this.roomCache.getRoomStatus(roomId)
+    if (roomStatus !== 'WAITING' && roomStatus !== 'SELECTING') {
+      throw new WsException('Cannot remove items in current room state')
+    }
+
+    const result = await this.roomCache.removeUserSelection(roomId, userId, mediaId)
+    return result === 1
   }
 
   async processSwipe(
