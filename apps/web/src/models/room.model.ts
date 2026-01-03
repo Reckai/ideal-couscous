@@ -140,6 +140,8 @@ effect(async () => {
   const data = await wrap(take(connectionEstablished))
   console.log('[connectionEstablished] Setting userId to:', data)
   userIdAtom.set(data.userId)
+  // Update socket auth for future reconnections
+  socket.auth = { userId: data.userId }
 }, 'handleConnectionEstablishedEffect')
 
 export const createRoomAction = action(async () => {

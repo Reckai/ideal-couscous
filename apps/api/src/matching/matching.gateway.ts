@@ -47,14 +47,23 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       const rawCookies = client.handshake.headers.cookie || ''
       const cookies = parseCookies(rawCookies)
       const userSession = cookies['user-session']
-      let userId = ''
 
-      if (!userSession) {
+      // Priority: 1. Auth payload (explicit) 2. Cookie (legacy/web)
+      let userId: string = client.handshake.auth?.userId as string
+
+      if (!userId && userSession) {
+        try {
+          userId = JSON.parse(userSession).data
+        } catch (e) {
+          this.logger.error(`Failed to parse user session cookie: ${e.message}`)
+        }
+      }
+
+      if (!userId) {
         userId = uuidv4()
         this.logger.debug(`New user connected: ${userId}`)
         client.emit('connection_established', { userId })
       } else {
-        userId = JSON.parse(cookies['user-session'] || '').data
         this.logger.debug(`User connected: ${userId}`)
         const userConnected = await this.matchingService.checkUserConnected(userId)
 

@@ -44,6 +44,26 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on('disconnect', onDisconnect)
     socket.on('connect_error', onConnectionError)
 
+    socket.on('connect_error', onConnectionError)
+
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`))
+      if (match) {
+        try {
+          return JSON.parse(decodeURIComponent(match[2])).data
+        } catch (e) {
+          console.error('Failed to parse cookie', e)
+          return null
+        }
+      }
+      return null
+    }
+
+    const userId = getCookie('user-session')
+    if (userId) {
+      socket.auth = { userId }
+    }
+
     socket.connect()
 
     return () => {
