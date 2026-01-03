@@ -5,8 +5,16 @@ import { toast } from 'sonner'
 import { roomDataAtom } from '@/models/room.model'
 import { socket } from '@/providers/socket'
 
+function getBaseUrl() {
+  let url = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api'
+  if (!url.startsWith('http')) {
+    url = `https://${url}`
+  }
+  return url
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api',
+  baseURL: getBaseUrl(),
 })
 
 export const animeListAtom = atom<Media[]>([], 'animeListAtom')
