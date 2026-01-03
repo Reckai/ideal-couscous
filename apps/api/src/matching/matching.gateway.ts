@@ -57,18 +57,23 @@ implements OnGatewayConnection, OnGatewayDisconnect {
         userId = JSON.parse(cookies['user-session'] || '').data
         this.logger.debug(`User connected: ${userId}`)
         const userConnected = await this.matchingService.checkUserConnected(userId)
+
         if (userConnected) {
           const roomId = await this.matchingService.getUserRoomId(userId)
           await client.join(roomId)
           client.data.roomId = roomId
-          const roomData = await this.matchingService.getSnapshotOfRoom(roomId)
+          console.log(roomId)
+          const roomData = await this.matchingService.getSnapshotOfRoom(roomId, userId)
           client.emit('sync_state', roomData)
+        } else {
+          client.emit('try_to_join')
         }
       }
       client.data.userId = userId
     } catch (e) {
       this.logger.error(`Failed to handle connection: ${e.message}`, e.stack)
-      client.disconnect()
+      // await this.matchingService.clearRoomData(roomId, userId)
+      client.emit('error_leave', { message: e.message, code: e.message })
     }
   }
 
@@ -220,16 +225,13 @@ implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const isAdded = await this.matchingService.addMediaToDraft(
-        roomId,
         userId,
+        roomId,
         data.mediaId,
       )
 
       if (isAdded) {
         const animeData: AnimeAddedData = { mediaId: data.mediaId, addedBy: userId }
-
-        // Broadcast to all in the room (including sender)
-        this.server.to(roomId).emit('anime_added', animeData)
 
         this.logger.log(`Anime ${data.mediaId} added to room ${roomId}`)
 
@@ -245,6 +247,59 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       return {
         success: false,
         error: { message: e.message || 'Failed to add anime', code: 'ADD_ANIME_FAILED' },
+      }
+    }
+  }
+
+  @SubscribeMessage('remove_media_from_draft')
+  async handleDeleteAnime(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { mediaId: string },
+  ) {
+    const { userId, roomId } = client.data
+
+    if (!userId) {
+      return {
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      }
+    }
+
+    if (!roomId) {
+      return {
+        success: false,
+        error: { message: 'User is not in a room', code: 'NOT_IN_ROOM' },
+      }
+    }
+
+    if (!data?.mediaId) {
+      return {
+        success: false,
+        error: { message: 'Media ID is required', code: 'INVALID_PAYLOAD' },
+      }
+    }
+
+    try {
+      const isDeleted = await this.matchingService.deleteMediaFromDraft(
+        userId,
+        roomId,
+        data.mediaId,
+      )
+
+      if (isDeleted) {
+        this.logger.log(`Anime ${data.mediaId} removed from room ${roomId} by user ${userId}`)
+        return { success: true, data: { mediaId: data.mediaId } }
+      } else {
+        return {
+          success: false,
+          error: { message: 'Anime not found in your deck', code: 'NOT_FOUND' },
+        }
+      }
+    } catch (e) {
+      this.logger.error(`Delete anime error: ${e.message}`)
+      return {
+        success: false,
+        error: { message: e.message || 'Failed to delete anime', code: 'DELETE_ANIME_FAILED' },
       }
     }
   }

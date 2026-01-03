@@ -27,6 +27,7 @@ export class RoomCacheRepository {
   private readonly KEYS = {
     roomState: (roomId: string) => `room:${roomId}:state`,
     roomDraft: (roomId: string) => `room:${roomId}:draft`,
+    userSelections: (roomId: string, userId: string) => `room:${roomId}:user:${userId}:selections`,
     mediaPool: (roomId: string) => `room:${roomId}:media_pool`,
     swipes: (roomId: string) => `room:${roomId}:swipes`,
     users: (roomId: string) => `room:${roomId}:users`,
@@ -212,11 +213,11 @@ export class RoomCacheRepository {
   // ============================================================================
 
   /**
-   * Сохранить выборы пользователя
+   * Сохранить выбор пользователя
    */
-  async saveUserSelection(roomId: string, mediaId: string): Promise<number> {
-    const key = this.KEYS.roomDraft(roomId)
-    this.logger.debug(`Saving ${mediaId} selections in room ${roomId}`)
+  async saveUserSelection(roomId: string, userId: string, mediaId: string): Promise<number> {
+    const key = this.KEYS.userSelections(roomId, userId)
+    this.logger.debug(`Saving ${mediaId} selection for user ${userId} in room ${roomId}`)
 
     const count = await this.redis.scard(key)
     if (count > 50) {
@@ -227,6 +228,22 @@ export class RoomCacheRepository {
 
     await this.redis.expire(key, this.ROOM_TTL)
     return result
+  }
+
+  /**
+   * Удалить выбор пользователя
+   */
+  async removeUserSelection(roomId: string, userId: string, mediaId: string): Promise<number> {
+    const key = this.KEYS.userSelections(roomId, userId)
+    return this.redis.srem(key, mediaId)
+  }
+
+  /**
+   * Получить выборы конкретного пользователя
+   */
+  async getUserSelections(roomId: string, userId: string): Promise<string[]> {
+    const key = this.KEYS.userSelections(roomId, userId)
+    return this.redis.smembers(key)
   }
 
   async getUsersInRoom(roomId: string): Promise<User[]> {
@@ -339,10 +356,15 @@ export class RoomCacheRepository {
     await this.redis.hset(key, userId, JSON.stringify(userData))
     await this.redis.expire(key, this.ROOM_TTL)
     await this.redis.set(this.KEYS.userInRoom(userId), roomId)
+    await this.redis.expire(this.KEYS.userInRoom(userId), this.ROOM_TTL)
   }
 
   async getRoomIdByUserId(userId: string): Promise<string> {
     return this.redis.get(this.KEYS.userInRoom(userId))
+  }
+
+  async clearRoomIdByUserId(userId: string): Promise<void> {
+    await this.redis.del(this.KEYS.userInRoom(userId))
   }
 
   /**
@@ -369,16 +391,28 @@ export class RoomCacheRepository {
   /**
    * Удалить все данные комнаты
    */
-  async deleteRoomData(roomId: string): Promise<void> {
+  async deleteRoomData(roomId: string, userId: string): Promise<void> {
     this.logger.debug(`Deleting all Redis data for room ${roomId}`)
 
     try {
+      // Сначала получаем всех пользователей, чтобы удалить их selections
+      const users = await this.getUsersInRoom(roomId)
+      const userSelectionKeys = users.map((user) =>
+        this.KEYS.userSelections(roomId, user.userId),
+      )
+      const userInRoomKeys = users.map((user) =>
+        this.KEYS.userInRoom(user.userId),
+      )
+
       const keys = [
         this.KEYS.roomState(roomId),
         this.KEYS.roomDraft(roomId),
         this.KEYS.mediaPool(roomId),
         this.KEYS.swipes(roomId),
         this.KEYS.users(roomId),
+        this.KEYS.userInRoom(userId),
+        ...userSelectionKeys,
+        ...userInRoomKeys,
       ]
 
       await this.redis.del(...keys)
@@ -392,11 +426,13 @@ export class RoomCacheRepository {
     }
   }
 
-  async getRoomDraft(roomId: string): Promise<string[]> {
-    const key = this.KEYS.roomDraft(roomId)
+  /**
+   * Получить объединённый draft всех пользователей комнаты
+   */
+  async getRoomDraft(roomId: string, userId: string): Promise<string[]> {
     try {
-      const draft = await this.redis.smembers(key)
-      return draft
+      const selections = await this.getUserSelections(roomId, userId)
+      return selections
     } catch (error) {
       this.logger.error(
         `Failed to get room draft: ${error.message}`,
@@ -411,11 +447,17 @@ export class RoomCacheRepository {
    */
   async refreshRoomTTL(roomId: string): Promise<void> {
     try {
+      const users = await this.getUsersInRoom(roomId)
+      const userSelectionKeys = users.map((user) =>
+        this.KEYS.userSelections(roomId, user.userId),
+      )
+
       const keys = [
         this.KEYS.roomState(roomId),
-        this.KEYS.roomDraft(roomId),
         this.KEYS.mediaPool(roomId),
         this.KEYS.swipes(roomId),
+        this.KEYS.users(roomId),
+        ...userSelectionKeys,
       ]
 
       await Promise.all(

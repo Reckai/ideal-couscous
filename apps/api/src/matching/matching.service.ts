@@ -113,7 +113,7 @@ export class MatchingService {
     await this.roomCache.removeUserFromRoom(roomId, userId)
     const usersInRoom = await this.roomCache.getUsersInRoom(roomId)
     if (usersInRoom.length === 0) {
-      await this.roomCache.deleteRoomData(roomId)
+      await this.roomCache.deleteRoomData(roomId, userId)
     }
   }
 
@@ -148,6 +148,10 @@ export class MatchingService {
       inviteCode: roomId,
       status: status as 'WAITING',
     }
+  }
+
+  async clearRoomData(roomId: string, userId: string): Promise<void> {
+    await this.roomCache.deleteRoomData(roomId, userId)
   }
 
   async getRoomData(roomId: string): Promise<BaseRoomData> {
@@ -223,8 +227,8 @@ export class MatchingService {
     }
 
     try {
-      const result = await this.roomCache.saveUserSelection(roomId, mediaId)
-
+      const result = await this.roomCache.saveUserSelection(roomId, userId, mediaId)
+      await this.roomCache.refreshRoomTTL(roomId)
       return result === 1
     } catch (e) {
       if (e.message === 'Draft limit reached') {
@@ -232,6 +236,25 @@ export class MatchingService {
       }
       throw e
     }
+  }
+
+  async deleteMediaFromDraft(
+    userId: string,
+    roomId: string,
+    mediaId: string,
+  ): Promise<boolean> {
+    const isMember = await this.roomCache.isUserInRoom(roomId, userId)
+    if (!isMember) {
+      throw new WsException('User is not member of the room')
+    }
+    const roomStatus = await this.roomCache.getRoomStatus(roomId)
+    if (roomStatus !== 'WAITING' && roomStatus !== 'SELECTING') {
+      throw new WsException('Cannot remove items in current room state')
+    }
+
+    const result = await this.roomCache.removeUserSelection(roomId, userId, mediaId)
+    await this.roomCache.refreshRoomTTL(roomId)
+    return result === 1
   }
 
   async processSwipe(
@@ -319,7 +342,7 @@ export class MatchingService {
     return mediaIds.map((id) => media.find((m) => m.id === id))
   }
 
-  async getSnapshotOfRoom(roomId: string): Promise<RoomData> {
+  async getSnapshotOfRoom(roomId: string, userId: string): Promise<RoomData> {
     const status = await this.roomCache.getRoomStatus(roomId)
     const basicData = await this.getRoomData(roomId)
 
@@ -330,7 +353,7 @@ export class MatchingService {
           status: 'WAITING',
         }
       case 'SELECTING': {
-        const selectedAnime = await this.roomCache.getRoomDraft(roomId)
+        const selectedAnime = await this.roomCache.getRoomDraft(roomId, userId)
         return {
           ...basicData,
           selectedAnime,
@@ -339,7 +362,7 @@ export class MatchingService {
       }
       case 'READY':
       {
-        const selectedAnime = await this.roomCache.getRoomDraft(roomId)
+        const selectedAnime = await this.roomCache.getRoomDraft(roomId, userId)
         return {
           ...basicData,
           selectedAnime,
@@ -376,6 +399,6 @@ export class MatchingService {
     }
 
     await this.roomCache.updateRoomStatus(roomId, 'SELECTING')
-    return this.getSnapshotOfRoom(roomId)
+    return this.getSnapshotOfRoom(roomId, userId)
   }
 }
