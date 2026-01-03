@@ -429,15 +429,10 @@ export class RoomCacheRepository {
   /**
    * Получить объединённый draft всех пользователей комнаты
    */
-  async getRoomDraft(roomId: string): Promise<string[]> {
+  async getRoomDraft(roomId: string, userId: string): Promise<string[]> {
     try {
-      const users = await this.getUsersInRoom(roomId)
-      const allSelections = await Promise.all(
-        users.map((user) => this.getUserSelections(roomId, user.userId)),
-      )
-      // Объединяем и убираем дубликаты
-      const uniqueSelections = [...new Set(allSelections.flat())]
-      return uniqueSelections
+      const selections = await this.getUserSelections(roomId, userId)
+      return selections
     } catch (error) {
       this.logger.error(
         `Failed to get room draft: ${error.message}`,

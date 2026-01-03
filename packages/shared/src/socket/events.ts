@@ -85,6 +85,7 @@ export interface ClientToServerEvents {
   add_anime: (data: { mediaId: string }, callback: AckCallback<AnimeAddedData>) => void
   leave_room: (data: { roomId: string }, callback: AckCallback<void>) => void
   start_selecting: (data: { roomId: string }, callback: AckCallback<void>) => void
+  remove_media_from_draft: (data: { mediaId: string }, callback: AckCallback<{ mediaId: string }>) => void
 }
 
 export interface InterServerEvents {

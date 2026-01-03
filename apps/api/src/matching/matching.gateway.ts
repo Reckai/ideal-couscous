@@ -63,7 +63,7 @@ implements OnGatewayConnection, OnGatewayDisconnect {
           await client.join(roomId)
           client.data.roomId = roomId
           console.log(roomId)
-          const roomData = await this.matchingService.getSnapshotOfRoom(roomId)
+          const roomData = await this.matchingService.getSnapshotOfRoom(roomId, userId)
           client.emit('sync_state', roomData)
         } else {
           client.emit('try_to_join')
@@ -251,7 +251,7 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('delete_anime')
+  @SubscribeMessage('remove_media_from_draft')
   async handleDeleteAnime(
     @ConnectedSocket() client: TypedSocket,
     @MessageBody() data: { mediaId: string },

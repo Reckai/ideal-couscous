@@ -24,7 +24,12 @@ export const toggleAnimeSelectionAction = action(async (media: Media) => {
   const isSelected = currentSelected.some((item) => item.id === media.id)
 
   if (isSelected) {
-    selectedAnimeListAtom.set(currentSelected.filter((item) => item.id !== media.id))
+    const response = await socket.emitWithAck('remove_media_from_draft', { mediaId: media.id })
+    if (response.success) {
+      selectedAnimeListAtom.set(currentSelected.filter((item) => item.id !== media.id))
+    } else {
+      toast('Something went wrong')
+    }
   } else {
     const response = await socket.emitWithAck('add_anime', { mediaId: media.id })
     if (response.success) {

@@ -228,7 +228,7 @@ export class MatchingService {
 
     try {
       const result = await this.roomCache.saveUserSelection(roomId, userId, mediaId)
-
+      await this.roomCache.refreshRoomTTL(roomId)
       return result === 1
     } catch (e) {
       if (e.message === 'Draft limit reached') {
@@ -253,6 +253,7 @@ export class MatchingService {
     }
 
     const result = await this.roomCache.removeUserSelection(roomId, userId, mediaId)
+    await this.roomCache.refreshRoomTTL(roomId)
     return result === 1
   }
 
@@ -341,7 +342,7 @@ export class MatchingService {
     return mediaIds.map((id) => media.find((m) => m.id === id))
   }
 
-  async getSnapshotOfRoom(roomId: string): Promise<RoomData> {
+  async getSnapshotOfRoom(roomId: string, userId: string): Promise<RoomData> {
     const status = await this.roomCache.getRoomStatus(roomId)
     const basicData = await this.getRoomData(roomId)
 
@@ -352,7 +353,7 @@ export class MatchingService {
           status: 'WAITING',
         }
       case 'SELECTING': {
-        const selectedAnime = await this.roomCache.getRoomDraft(roomId)
+        const selectedAnime = await this.roomCache.getRoomDraft(roomId, userId)
         return {
           ...basicData,
           selectedAnime,
@@ -361,7 +362,7 @@ export class MatchingService {
       }
       case 'READY':
       {
-        const selectedAnime = await this.roomCache.getRoomDraft(roomId)
+        const selectedAnime = await this.roomCache.getRoomDraft(roomId, userId)
         return {
           ...basicData,
           selectedAnime,
@@ -398,6 +399,6 @@ export class MatchingService {
     }
 
     await this.roomCache.updateRoomStatus(roomId, 'SELECTING')
-    return this.getSnapshotOfRoom(roomId)
+    return this.getSnapshotOfRoom(roomId, userId)
   }
 }
