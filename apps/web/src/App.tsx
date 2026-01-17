@@ -5,9 +5,7 @@ import './i18n'
 
 function App() {
   return (
-
     <RouterProvider router={router} />
-
   )
 }
 

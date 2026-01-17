@@ -13,7 +13,7 @@ const Room = reatomComponent(() => {
   }
 
   return (
-    <div className="container mx-auto min-h-screen relative p-4 flex justify-center items-center">
+    <div className="min-h-screen relative bg-background">
       <GameRouter />
     </div>
   )

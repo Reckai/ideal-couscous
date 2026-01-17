@@ -10,7 +10,7 @@ export const GameRouter = reatomComponent(() => {
 
   if (!roomState) {
     return (
-      <div className="flex h-[50vh] w-full flex-col items-center justify-center gap-4 text-muted-foreground">
+      <div className="container mx-auto min-h-screen p-4 flex flex-col items-center justify-center gap-4 text-muted-foreground">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-sm font-medium animate-pulse">Подключение к комнате...</p>
       </div>
@@ -23,7 +23,11 @@ export const GameRouter = reatomComponent(() => {
   switch (roomState.status) {
     case 'WAITING':
     case 'READY':
-      return <Lobby />
+      return (
+        <div className="container mx-auto min-h-screen p-4 flex justify-center items-center">
+          <Lobby />
+        </div>
+      )
 
     case 'SELECTING':
       return (
@@ -32,17 +36,21 @@ export const GameRouter = reatomComponent(() => {
 
     case 'SWIPING':
       return (
-        <div>
-          <h2>Swiping Stage</h2>
-          {/* TODO: Add Swiping Component */}
+        <div className="container mx-auto min-h-screen p-4 flex justify-center items-center">
+          <div>
+            <h2>Swiping Stage</h2>
+            {/* TODO: Add Swiping Component */}
+          </div>
         </div>
       )
 
     case 'MATCHED':
       return (
-        <div>
-          <h2>Matched!</h2>
-          {/* TODO: Add Match Component */}
+        <div className="container mx-auto min-h-screen p-4 flex justify-center items-center">
+          <div>
+            <h2>Matched!</h2>
+            {/* TODO: Add Match Component */}
+          </div>
         </div>
       )
 

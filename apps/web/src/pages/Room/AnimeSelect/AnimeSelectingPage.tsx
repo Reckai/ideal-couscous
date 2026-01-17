@@ -1,6 +1,7 @@
 import { reatomComponent } from '@reatom/react'
 import { Loader2, Search, Trophy } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   animeListAtom,
   isLoadingInitialAtom,
@@ -41,7 +42,7 @@ export const AnimeSelectingPage = reatomComponent(() => {
   }, [isLoadingMore, isLoadingInitial, searchQuery])
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-background">
+    <div className="h-dvh w-full flex flex-col overflow-hidden bg-background">
       {/* Header */}
       <header className="flex-none border-b border-border/50 bg-card/50 backdrop-blur p-4 z-20">
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
@@ -103,8 +104,17 @@ export const AnimeSelectingPage = reatomComponent(() => {
         </main>
 
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-80 lg:w-96 flex-none h-full z-10 border-l border-border/50 bg-card/30 backdrop-blur-sm">
-          <SelectedAnimeList />
+        <aside className="hidden md:flex md:flex-col w-80 lg:w-96 flex-none h-full z-10 border-l border-border/50 bg-card/30 backdrop-blur-sm">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <SelectedAnimeList />
+          </div>
+          <div className="flex-none p-4 border-t border-border/50">
+            <Button
+              className="w-full"
+            >
+              READY
+            </Button>
+          </div>
         </aside>
       </div>
 
@@ -116,8 +126,17 @@ export const AnimeSelectingPage = reatomComponent(() => {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
               onClick={() => setIsMobileDrawerOpen(false)}
             />
-            <div className="relative w-[300px] h-full bg-card shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
-              <SelectedAnimeList onClose={() => setIsMobileDrawerOpen(false)} />
+            <div className="relative w-[85vw] max-w-[300px] h-full bg-card shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <SelectedAnimeList onClose={() => setIsMobileDrawerOpen(false)} />
+              </div>
+              <div className="flex-none p-4 border-t border-border/50">
+                <Button
+                  className="w-full"
+                >
+                  READY
+                </Button>
+              </div>
             </div>
           </div>
         )}
