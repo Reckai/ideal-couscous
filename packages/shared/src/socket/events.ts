@@ -76,6 +76,7 @@ export interface ServerToClientEvents {
   sync_state: (data: RoomData) => void
   try_to_join: (data: void) => void
   error_leave: (data: Error) => void
+  user_ready_changed: (data: { userId: string, isReady: boolean }) => void
 }
 
 // Client -> Server events (with acknowledgement callbacks)
@@ -86,6 +87,7 @@ export interface ClientToServerEvents {
   leave_room: (data: { roomId: string }, callback: AckCallback<void>) => void
   start_selecting: (data: { roomId: string }, callback: AckCallback<void>) => void
   remove_media_from_draft: (data: { mediaId: string }, callback: AckCallback<{ mediaId: string }>) => void
+  set_ready: (data: { isReady: boolean }, callback: AckCallback<void>) => void
 }
 
 export interface InterServerEvents {

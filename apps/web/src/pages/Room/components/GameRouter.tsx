@@ -1,12 +1,27 @@
 import { reatomComponent } from '@reatom/react'
 import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { roomDataAtom } from '@/models/room.model'
 import { AnimeSelectingPage } from '../AnimeSelect/AnimeSelectingPage'
+import { ReadyPage } from '../Ready/ReadyPage'
+import { SwipingPage } from '../Swiping/SwipingPage'
 import { Lobby } from './Lobby'
 
 export const GameRouter = reatomComponent(() => {
   const roomState = roomDataAtom()
+  const [showReadyAnimation, setShowReadyAnimation] = useState(false)
+  const previousStatusRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    // Show 3-second animation when transitioning from SELECTING to SWIPING
+    if (roomState?.status === 'SWIPING' && previousStatusRef.current === 'SELECTING') {
+      setShowReadyAnimation(true)
+      const timer = setTimeout(() => setShowReadyAnimation(false), 3000)
+      return () => clearTimeout(timer)
+    }
+    previousStatusRef.current = roomState?.status ?? null
+  }, [roomState?.status])
 
   if (!roomState) {
     return (
@@ -22,7 +37,6 @@ export const GameRouter = reatomComponent(() => {
 
   switch (roomState.status) {
     case 'WAITING':
-    case 'READY':
       return (
         <div className="container mx-auto min-h-screen p-4 flex justify-center items-center">
           <Lobby />
@@ -35,14 +49,10 @@ export const GameRouter = reatomComponent(() => {
       )
 
     case 'SWIPING':
-      return (
-        <div className="container mx-auto min-h-screen p-4 flex justify-center items-center">
-          <div>
-            <h2>Swiping Stage</h2>
-            {/* TODO: Add Swiping Component */}
-          </div>
-        </div>
-      )
+      if (showReadyAnimation) {
+        return <ReadyPage />
+      }
+      return <SwipingPage />
 
     case 'MATCHED':
       return (

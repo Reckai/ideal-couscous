@@ -28,6 +28,7 @@ const socketConnected = action((payload?: undefined) => payload, 'socketConnecte
 const connectionEstablished = action((payload: ConnectionData) => payload, 'connectionEstablished')
 const syncState = action((payload: RoomData) => payload, 'syncState')
 const coonectError = action((payload: Error) => payload, 'coonectError')
+export const userReadyChanged = action((payload: { userId: string, isReady: boolean }) => payload, 'userReadyChanged')
 export const joinRoomAction = action(async (inviteCode: string) => {
   console.log('[joinRoomAction] Starting with code:', inviteCode)
   errorAtom.set(null)
@@ -57,6 +58,7 @@ effect(() => {
   const onSyncState = (data: RoomData) => syncState(data)
   const onTryToJoin = () => joinRoomAction(roomIdAtom()!)
   const onConnectError = (data: Error) => coonectError(data)
+  const onUserReadyChanged = (data: { userId: string, isReady: boolean }) => userReadyChanged(data)
   socket.on('user_joined', wrap(onUserJoined))
   socket.on('user_left', wrap(onUserLeft))
   socket.on('connect', wrap(onConnect))
@@ -64,6 +66,7 @@ effect(() => {
   socket.on('sync_state', wrap(onSyncState))
   socket.on('try_to_join', onTryToJoin)
   socket.on('error_leave', onConnectError)
+  socket.on('user_ready_changed', wrap(onUserReadyChanged))
 
   return () => {
     socket.off('user_joined', wrap(onUserJoined)) // Важно отписываться от той же ссылки, что и подписывались
@@ -72,6 +75,7 @@ effect(() => {
     socket.off('sync_state', wrap(onSyncState))
     socket.off('try_to_join', onTryToJoin)
     socket.off('error_leave', onConnectError)
+    socket.off('user_ready_changed', wrap(onUserReadyChanged))
   }
 }, 'socketEventHandlersEffect')
 

@@ -360,13 +360,14 @@ export class MatchingService {
           status: 'SELECTING',
         }
       }
-      case 'READY':
+      case 'SWIPING':
       {
-        const selectedAnime = await this.roomCache.getRoomDraft(roomId, userId)
+        const mediaPool = await this.roomCache.getMediaPool(roomId)
         return {
           ...basicData,
-          selectedAnime,
-          status: 'READY',
+          status: 'SWIPING',
+          currentMediaIndex: 0,
+          mediaQueue: mediaPool,
         }
       }
       case 'MATCHED':
@@ -400,5 +401,59 @@ export class MatchingService {
 
     await this.roomCache.updateRoomStatus(roomId, 'SELECTING')
     return this.getSnapshotOfRoom(roomId, userId)
+  }
+
+  async setUserRediness(roomId: string, userId: string, isReady: boolean): Promise<RoomStatus> {
+    // Step 1: Check if user is in room
+    const isMember = await this.roomCache.isUserInRoom(roomId, userId)
+    if (!isMember) {
+      throw new WsException('User is not a member of this room')
+    }
+
+    // Step 2: Verify room status is SELECTING
+    const status = await this.roomCache.getRoomStatus(roomId)
+    if (status !== 'SELECTING') {
+      throw new WsException('Cannot set readiness - room is not in SELECTING state')
+    }
+
+    // Step 3: Determine if user is host or guest
+    const isHost = await this.roomCache.isUserHost(roomId, userId)
+
+    // Step 4: Set user's readiness
+    await this.roomCache.setUserReadiness(roomId, isHost, isReady)
+
+    // Step 5: Check if both users ready -> transition directly to SWIPING
+    if (isReady) {
+      const bothReady = await this.roomCache.areBothReady(roomId)
+      if (bothReady) {
+        // 1. Collect selections from both users
+        const users = await this.roomCache.getUsersInRoom(roomId)
+        const allSelections: string[] = []
+
+        for (const user of users) {
+          const selections = await this.roomCache.getUserSelections(roomId, user.userId)
+          allSelections.push(...selections)
+        }
+
+        // 2. Dedupe and shuffle to create media pool
+        const shuffled = this.shuffleArray([...new Set(allSelections)])
+        await this.roomCache.createMediaPool(roomId, shuffled)
+
+        // 3. Transition directly to SWIPING
+        await this.roomCache.updateRoomStatus(roomId, 'SWIPING')
+        this.logger.log(`Room ${roomId} transitioned to SWIPING state`)
+        return 'SWIPING'
+      }
+    }
+
+    return 'SELECTING'
+  }
+
+  private shuffleArray<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]]
+    }
+    return array
   }
 }

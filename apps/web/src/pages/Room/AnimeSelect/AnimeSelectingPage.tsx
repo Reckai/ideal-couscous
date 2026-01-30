@@ -1,14 +1,18 @@
 import { reatomComponent } from '@reatom/react'
-import { Loader2, Search, Trophy } from 'lucide-react'
+import { Check, Loader2, Search, Trophy, Users } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   animeListAtom,
   isLoadingInitialAtom,
   isLoadingMoreAtom,
+  isReadyAtom,
+  isSettingReadyAtom,
   loadMoreAnimeAction,
+  otherUserReadyAtom,
   searchQueryAtom,
   selectedAnimeListAtom,
+  setReadyAction,
   updateSearchQueryAction,
 } from './animeSelect.model'
 import { AnimeCard } from './components/AnimeCard'
@@ -20,6 +24,11 @@ export const AnimeSelectingPage = reatomComponent(() => {
   const isLoadingInitial = isLoadingInitialAtom()
   const isLoadingMore = isLoadingMoreAtom()
   const selectedList = selectedAnimeListAtom()
+  const isReady = isReadyAtom()
+  const isSettingReady = isSettingReadyAtom()
+  const otherUserReady = otherUserReadyAtom()
+
+  const readyCount = (isReady ? 1 : 0) + (otherUserReady ? 1 : 0)
 
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
@@ -58,6 +67,28 @@ export const AnimeSelectingPage = reatomComponent(() => {
               placeholder="Search anime..."
               className="w-full pl-9 pr-4 py-2 rounded-full bg-secondary/50 border-transparent focus:bg-background focus:border-primary/20 transition-all outline-none text-sm"
             />
+          </div>
+
+          {/* Ready Status Indicator */}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            readyCount === 2
+              ? 'bg-green-500/20 text-green-500'
+              : readyCount === 1
+                ? 'bg-yellow-500/20 text-yellow-500'
+                : 'bg-muted text-muted-foreground'
+          }`}
+          >
+            {readyCount === 2
+              ? (
+                  <Check className="w-4 h-4" />
+                )
+              : (
+                  <Users className="w-4 h-4" />
+                )}
+            <span>
+              {readyCount}
+              /2
+            </span>
           </div>
 
           {/* Mobile Drawer Toggle */}
@@ -111,8 +142,12 @@ export const AnimeSelectingPage = reatomComponent(() => {
           <div className="flex-none p-4 border-t border-border/50">
             <Button
               className="w-full"
+              onClick={() => setReadyAction()}
+              disabled={isSettingReady}
+              variant={isReady ? 'secondary' : 'default'}
             >
-              READY
+              {isSettingReady ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {isReady ? 'NOT READY' : 'READY'}
             </Button>
           </div>
         </aside>
@@ -133,8 +168,12 @@ export const AnimeSelectingPage = reatomComponent(() => {
               <div className="flex-none p-4 border-t border-border/50">
                 <Button
                   className="w-full"
+                  onClick={() => setReadyAction()}
+                  disabled={isSettingReady}
+                  variant={isReady ? 'secondary' : 'default'}
                 >
-                  READY
+                  {isSettingReady ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {isReady ? 'NOT READY' : 'READY'}
                 </Button>
               </div>
             </div>

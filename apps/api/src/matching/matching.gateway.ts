@@ -370,8 +370,59 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
-    const response = await this.matchingService.startSelections(selectionRoomId, client.data.userId)
-    this.server.to(client.data.roomId).emit('sync_state', response)
-    return { success: true, data: undefined }
+    try {
+      const response = await this.matchingService.startSelections(selectionRoomId, client.data.userId)
+      this.server.to(client.data.roomId).emit('sync_state', response)
+      return { success: true, data: undefined }
+    } catch (e) {
+      this.logger.error(`Start selecting error: ${e.message}`)
+      return {
+        success: false,
+        error: { message: e.message || 'Failed to start selection', code: 'START_SELECTIONS_FAILED' },
+      }
+    }
+  }
+
+  @SubscribeMessage('set_ready')
+  async handleUserReadiness(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() data: { isReady: boolean },
+  ) {
+    const { roomId: currentRoomId, userId } = client.data
+
+    if (!userId) {
+      return {
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      }
+    }
+
+    if (!currentRoomId) {
+      return {
+        success: false,
+        error: { message: 'User is not in a room', code: 'NOT_IN_ROOM' },
+      }
+    }
+
+    try {
+      const newStatus = await this.matchingService.setUserRediness(currentRoomId, userId, data.isReady)
+
+      // Notify other user about readiness change
+      client.to(currentRoomId).emit('user_ready_changed', { userId, isReady: data.isReady })
+
+      // If room transitioned to SWIPING, broadcast sync_state to all
+      if (newStatus === 'SWIPING') {
+        const roomData = await this.matchingService.getSnapshotOfRoom(currentRoomId, userId)
+        this.server.to(currentRoomId).emit('sync_state', roomData)
+      }
+
+      return { success: true, data: undefined }
+    } catch (e) {
+      this.logger.error(`Set ready error: ${e.message}`)
+      return {
+        success: false,
+        error: { message: e.message || 'Failed to set readiness', code: 'SET_READY_FAILED' },
+      }
+    }
   }
 }

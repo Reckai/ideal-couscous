@@ -1,4 +1,24 @@
 {
+  "SwipingPage": {
+    "title": "Anime Tinder",
+    "viewOnTmdb": "Дивитись на TMDB",
+    "swipeLeftToSkip": "Свайп вліво — пропустити",
+    "swipeRightToLike": "Свайп вправо — подобається",
+    "like": "ТАК",
+    "nope": "НІ",
+    "skip": "Пропустити",
+    "likeAction": "Подобається",
+    "emptyState": {
+      "title": "Готово!",
+      "description": "Ви переглянули все аніме.",
+      "waitForPartner": "Зачекайте, поки ваш партнер закінчить!"
+    },
+    "match": {
+      "title": "Це збіг!",
+      "continueButton": "Продовжити гортати"
+    },
+    "progress": "{{current}} / {{total}}"
+  },
   "HomePage": {
     "title": "Знайдіть що подивитись",
     "subtitle": "Разом сьогодні",

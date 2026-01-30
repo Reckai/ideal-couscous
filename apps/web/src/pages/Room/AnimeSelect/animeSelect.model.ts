@@ -1,8 +1,8 @@
 import type { Media } from './types/media'
-import { action, atom, effect, sleep, withAsync, wrap } from '@reatom/core'
+import { action, atom, effect, getCalls, sleep, withAsync, wrap } from '@reatom/core'
 import axios from 'axios'
 import { toast } from 'sonner'
-import { roomDataAtom } from '@/models/room.model'
+import { roomDataAtom, userReadyChanged } from '@/models/room.model'
 import { socket } from '@/providers/socket'
 
 function getBaseUrl() {
@@ -27,6 +27,9 @@ export const debouncedSearchQueryAtom = atom<string | null>(null)
 export const isLoadingInitialAtom = atom<boolean>(false)
 export const isLoadingMoreAtom = atom<boolean>(false)
 export const hasInitialFetchedAtom = atom<boolean>(false)
+export const isReadyAtom = atom<boolean>(false, 'isReadyAtom')
+export const isSettingReadyAtom = atom<boolean>(false, 'isSettingReadyAtom')
+export const otherUserReadyAtom = atom<boolean>(false, 'otherUserReadyAtom')
 export const toggleAnimeSelectionAction = action(async (media: Media) => {
   const currentSelected = selectedAnimeListAtom()
   const isSelected = currentSelected.some((item) => item.id === media.id)
@@ -47,6 +50,21 @@ export const toggleAnimeSelectionAction = action(async (media: Media) => {
     }
   }
 }, 'toggleAnimeSelectionAction').extend(withAsync())
+
+export const setReadyAction = action(async () => {
+  const currentReady = isReadyAtom()
+  const newReady = !currentReady
+
+  isSettingReadyAtom.set(true)
+  const response = await wrap(socket.emitWithAck('set_ready', { isReady: newReady }))
+  isSettingReadyAtom.set(false)
+
+  if (response.success) {
+    isReadyAtom.set(newReady)
+  } else {
+    toast(response.error?.message || 'Failed to set ready status')
+  }
+}, 'setReadyAction').extend(withAsync())
 
 export const fetchAnimeListAction = action(async (append: boolean, cursor?: string, search?: string) => {
   const roomData = roomDataAtom()
@@ -142,4 +160,13 @@ effect(() => {
   hasInitialFetchedAtom.set(false)
   searchQueryAtom.set('')
   debouncedSearchQueryAtom.set('')
+  isReadyAtom.set(false)
+  isSettingReadyAtom.set(false)
+  otherUserReadyAtom.set(false)
 }, 'clearEffect')
+
+effect(() => {
+  getCalls(userReadyChanged).forEach(({ payload }) => {
+    otherUserReadyAtom.set(payload.isReady)
+  })
+}, 'handleUserReadyChangedEffect')

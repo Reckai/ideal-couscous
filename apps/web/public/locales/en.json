@@ -1,4 +1,24 @@
 {
+  "SwipingPage": {
+    "title": "Anime Tinder",
+    "viewOnTmdb": "View on TMDB",
+    "swipeLeftToSkip": "Swipe left to skip",
+    "swipeRightToLike": "Swipe right to like",
+    "like": "LIKE",
+    "nope": "NOPE",
+    "skip": "Skip",
+    "likeAction": "Like",
+    "emptyState": {
+      "title": "All done!",
+      "description": "You've swiped through all the anime.",
+      "waitForPartner": "Wait for your partner to finish!"
+    },
+    "match": {
+      "title": "It's a Match!",
+      "continueButton": "Continue Swiping"
+    },
+    "progress": "{{current}} / {{total}}"
+  },
   "HomePage": {
     "title": "Find What to Watch",
     "subtitle": "Together Tonight",
