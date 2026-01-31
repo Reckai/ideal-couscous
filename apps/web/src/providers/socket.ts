@@ -4,7 +4,7 @@ import { io } from 'socket.io-client'
 
 export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4000'
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001'
 const fullUrl = `${WS_URL}/matching`
 
 export const socket: TypedSocket = io(fullUrl, {

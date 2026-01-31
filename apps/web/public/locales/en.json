@@ -17,7 +17,11 @@
       "title": "It's a Match!",
       "continueButton": "Continue Swiping"
     },
-    "progress": "{{current}} / {{total}}"
+    "progress": "{{current}} / {{total}}",
+    "noMatch": {
+      "title": "Unfortunately, no matches found",
+      "returnButton": "Return to main"
+    }
   },
   "HomePage": {
     "title": "Find What to Watch",

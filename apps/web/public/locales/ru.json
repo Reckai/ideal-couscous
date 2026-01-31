@@ -17,7 +17,11 @@
       "title": "Это совпадение!",
       "continueButton": "Продолжить свайпать"
     },
-    "progress": "{{current}} / {{total}}"
+    "progress": "{{current}} / {{total}}",
+    "noMatch": {
+      "title": "К сожалению, совпадений не найдено",
+      "returnButton": "Вернуться на главную"
+    }
   },
   "HomePage": {
     "title": "Найдите что посмотреть",

@@ -6,14 +6,14 @@ import { roomDataAtom, userReadyChanged } from '@/models/room.model'
 import { socket } from '@/providers/socket'
 
 function getBaseUrl() {
-  let url = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/api'
+  let url = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001/api'
   if (!url.startsWith('http')) {
     url = `https://${url}`
   }
   return url
 }
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: getBaseUrl(),
 })
 

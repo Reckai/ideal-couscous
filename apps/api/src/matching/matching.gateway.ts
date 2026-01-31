@@ -3,6 +3,8 @@ import type {
   OnGatewayDisconnect,
 } from '@nestjs/websockets'
 import type {
+  AckError,
+  AckResponse,
   AnimeAddedData,
   ClientToServerEvents,
   InterServerEvents,
@@ -21,6 +23,7 @@ import {
 import { parse as parseCookies } from 'cookie'
 import { DisconnectTimerService } from 'src/room/services/disconnectTime.service'
 import { v4 as uuidv4 } from 'uuid'
+import { SwipeAction } from './dto/swipes.dto'
 import { MatchingService } from './matching.service'
 
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
@@ -424,5 +427,20 @@ implements OnGatewayConnection, OnGatewayDisconnect {
         error: { message: e.message || 'Failed to set readiness', code: 'SET_READY_FAILED' },
       }
     }
+  }
+
+  @SubscribeMessage('swipe')
+  async handleSwipe(
+    @ConnectedSocket()client: TypedSocket,
+    @MessageBody() data: { mediaId: string, action: SwipeAction },
+  ): Promise<AckResponse<void> | AckError> {
+    const { userId, roomId } = client.data
+    const result = await this.matchingService.processSwipe(data.action, userId, roomId, data.mediaId)
+
+    if (result.isMatch && result.matchData) {
+      this.server.to(roomId).emit('match_found', result.matchData)
+      this.logger.log('Match founds')
+    }
+    return { success: true, data: undefined }
   }
 }

@@ -15,7 +15,7 @@ export const environmentSchema = z.object({
     .string()
     .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().int().positive())
-    .default(4000),
+    .default(3001),
 
   // PostgreSQL
   DATABASE_URL: z

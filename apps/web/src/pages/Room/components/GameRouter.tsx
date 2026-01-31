@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { roomDataAtom } from '@/models/room.model'
 import { AnimeSelectingPage } from '../AnimeSelect/AnimeSelectingPage'
+import { MatchedPage } from '../Matched/MatchedPage'
 import { ReadyPage } from '../Ready/ReadyPage'
 import { SwipingPage } from '../Swiping/SwipingPage'
 import { Lobby } from './Lobby'
@@ -55,15 +56,7 @@ export const GameRouter = reatomComponent(() => {
       return <SwipingPage />
 
     case 'MATCHED':
-      return (
-        <div className="container mx-auto min-h-screen p-4 flex justify-center items-center">
-          <div>
-            <h2>Matched!</h2>
-            {/* TODO: Add Match Component */}
-          </div>
-        </div>
-      )
-
+      return <MatchedPage />
     default:
       return <div>Unknown state</div>
   }

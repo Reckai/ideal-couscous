@@ -1,94 +1,36 @@
-import type { Media } from '../AnimeSelect/types/media'
+import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Sparkles } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
 import { AnimeSwipeCard } from './components/AnimeSwipeCard'
+import { NoMatchModal } from './components/NoMatchModal'
 import { SwipeActionButtons } from './components/SwipeActionButtons'
-
-// Mock data for UI development - will be replaced with real data from WebSocket
-const MOCK_ANIME: Media[] = [
-  {
-    id: '1',
-    title: 'Attack on Titan',
-    posterPath: '/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg',
-    tmdbId: '1429',
-    TMDBLink: 'https://www.themoviedb.org/tv/1429',
-    createdAt: new Date(),
-  },
-  {
-    id: '2',
-    title: 'Death Note',
-    posterPath: '/iigTJJskR1PcjjXqxdyJwVB3BoU.jpg',
-    tmdbId: '13916',
-    TMDBLink: 'https://www.themoviedb.org/tv/13916',
-    createdAt: new Date(),
-  },
-  {
-    id: '3',
-    title: 'Fullmetal Alchemist: Brotherhood',
-    posterPath: '/5ZFUEOULaVml7pQuXxhpR2SmVUw.jpg',
-    tmdbId: '31911',
-    TMDBLink: 'https://www.themoviedb.org/tv/31911',
-    createdAt: new Date(),
-  },
-  {
-    id: '4',
-    title: 'Demon Slayer',
-    posterPath: '/xUfRZu2mi8jH6SzQEJGP6tjBuYj.jpg',
-    tmdbId: '85937',
-    TMDBLink: 'https://www.themoviedb.org/tv/85937',
-    createdAt: new Date(),
-  },
-  {
-    id: '5',
-    title: 'Jujutsu Kaisen',
-    posterPath: '/hFWP5HkbVEe40hrXgtCeQxoccHE.jpg',
-    tmdbId: '95479',
-    TMDBLink: 'https://www.themoviedb.org/tv/95479',
-    createdAt: new Date(),
-  },
-]
+import { currentMediaIndexAtom, foundedMatchAtom, mediaDetailsAtom, queueFinishedAtom, startIndexAtom, swipeAction } from './model/swipingPage.model'
 
 export const SwipingPage = reatomComponent(() => {
   const { t } = useTranslation()
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [showMatch, setShowMatch] = useState(false)
-  const [matchedAnime, setMatchedAnime] = useState<Media | null>(null)
 
-  // Mock media queue - will be replaced with real data from roomDataAtom
-  const mediaQueue = MOCK_ANIME
+  const isFinished = queueFinishedAtom()
+  const allMedia = mediaDetailsAtom()
+  const currentIndex = currentMediaIndexAtom()
+  const startIndex = startIndexAtom()
+  const showMatch = foundedMatchAtom() !== null
+  const matchedAnime = foundedMatchAtom()
 
-  const currentCards = mediaQueue.slice(currentIndex, currentIndex + 2)
+  const localIndex = currentIndex - startIndex
+  const currentCard = allMedia[localIndex]
+  const nextCard = allMedia[localIndex + 1]
+  const visibleCards = [nextCard, currentCard].filter(Boolean)
 
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
-    const swipedMedia = mediaQueue[currentIndex]
-
-    // Simulate match on every 3rd like (for demo purposes)
-    if (direction === 'right' && currentIndex % 3 === 2) {
-      setMatchedAnime(swipedMedia)
-      setShowMatch(true)
+    if (direction === 'right') {
+      wrap(swipeAction('LIKE'))
+    } else {
+      wrap(swipeAction('SKIP'))
     }
-
-    setCurrentIndex((prev) => prev + 1)
-  }, [currentIndex, mediaQueue])
-
-  const handleSkip = useCallback(() => {
-    handleSwipe('left')
-  }, [handleSwipe])
-
-  const handleLike = useCallback(() => {
-    handleSwipe('right')
-  }, [handleSwipe])
-
-  const handleCloseMatch = useCallback(() => {
-    setShowMatch(false)
-    setMatchedAnime(null)
   }, [])
-
-  const isFinished = currentIndex >= mediaQueue.length
 
   return (
     <div className="h-dvh w-full flex flex-col overflow-hidden bg-background">
@@ -123,12 +65,12 @@ export const SwipingPage = reatomComponent(() => {
                 {/* Card Stack */}
                 <div className="relative w-full max-w-sm aspect-[3/4] mb-8">
                   <AnimatePresence mode="popLayout">
-                    {currentCards.map((media, index) => (
+                    {visibleCards.map((media, index) => (
                       <AnimeSwipeCard
                         key={media.id}
                         media={media}
                         onSwipe={handleSwipe}
-                        isTop={index === 0}
+                        isTop={index === visibleCards.length - 1}
                       />
                     ))}
                   </AnimatePresence>
@@ -136,15 +78,11 @@ export const SwipingPage = reatomComponent(() => {
 
                 {/* Action Buttons */}
                 <SwipeActionButtons
-                  onSkip={handleSkip}
-                  onLike={handleLike}
+                  onSkip={() => handleSwipe('left')}
+                  onLike={() => handleSwipe('right')}
                   disabled={isFinished}
                 />
 
-                {/* Progress Indicator */}
-                <div className="mt-6 text-sm text-muted-foreground">
-                  {t('SwipingPage.progress', { current: currentIndex + 1, total: mediaQueue.length })}
-                </div>
               </>
             )}
       </main>
@@ -161,7 +99,7 @@ export const SwipingPage = reatomComponent(() => {
             {/* Backdrop */}
             <motion.div
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              onClick={handleCloseMatch}
+              // onClick={handleCloseMatch}
             />
 
             {/* Match Content */}
@@ -201,12 +139,12 @@ export const SwipingPage = reatomComponent(() => {
               >
                 <img
                   src={`https://image.tmdb.org/t/p/w500${matchedAnime.posterPath}`}
-                  alt={matchedAnime.title}
+                  alt={matchedAnime.mediaTitle}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="text-white font-bold text-lg">{matchedAnime.title}</h3>
+                  <h3 className="text-white font-bold text-lg">{matchedAnime.mediaTitle}</h3>
                 </div>
               </motion.div>
 
@@ -214,6 +152,9 @@ export const SwipingPage = reatomComponent(() => {
           </motion.div>
         )}
       </AnimatePresence>
+      {isFinished && !matchedAnime && (
+        <NoMatchModal />
+      )}
     </div>
   )
 }, 'SwipingPage')

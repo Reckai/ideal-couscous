@@ -1,4 +1,16 @@
 export type UserStatus = 'online' | 'offline'
+
+export type SwipeAction = 'LIKE' | 'SKIP'
+
+export interface MatchFoundData {
+  mediaId: string
+
+  mediaTitle: string
+
+  posterPath: string | null
+
+  matchedAt: Date
+}
 export interface Error {
   message: string
   code: string
@@ -52,7 +64,7 @@ interface SwipingRoomState extends BaseRoomData {
   currentMediaIndex: number
   mediaQueue: string[]
 }
-interface MatchedRoomState extends BaseRoomData {
+export interface MatchedRoomState extends BaseRoomData {
   status: 'MATCHED'
   matchId: string
 }
@@ -77,6 +89,8 @@ export interface ServerToClientEvents {
   try_to_join: (data: void) => void
   error_leave: (data: Error) => void
   user_ready_changed: (data: { userId: string, isReady: boolean }) => void
+  match_found: (data: MatchFoundData) => void
+  queue_finished: () => void
 }
 
 // Client -> Server events (with acknowledgement callbacks)
@@ -88,6 +102,7 @@ export interface ClientToServerEvents {
   start_selecting: (data: { roomId: string }, callback: AckCallback<void>) => void
   remove_media_from_draft: (data: { mediaId: string }, callback: AckCallback<{ mediaId: string }>) => void
   set_ready: (data: { isReady: boolean }, callback: AckCallback<void>) => void
+  swipe: (data: { mediaId: string, action: SwipeAction }, callback: AckCallback<void>) => void
 }
 
 export interface InterServerEvents {

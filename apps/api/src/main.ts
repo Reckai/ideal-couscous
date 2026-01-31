@@ -44,6 +44,8 @@ async function bootstrap() {
     credentials: true,
   })
 
+  const port = process.env.PORT || 4000
+
   // Swagger API Documentation (only in development)
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
@@ -72,11 +74,10 @@ async function bootstrap() {
     })
 
     logger.log(
-      '📖 Swagger documentation available at http://localhost:4000/api/docs',
+      `📖 Swagger documentation available at http://localhost:${port}/api/docs`,
     )
   }
 
-  const port = process.env.PORT || 4000
   await app.listen(port)
 
   logger.log(`✅ Application running on http://localhost:${port}/api`)
