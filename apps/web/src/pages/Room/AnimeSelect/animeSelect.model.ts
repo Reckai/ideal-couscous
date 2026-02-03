@@ -81,15 +81,13 @@ export const fetchAnimeListAction = action(async (append: boolean, cursor?: stri
   const response = await wrap(api.get('/media', {
     params: { limit: 20, cursor, search },
   }))
-  paginationAtom.set(response.data.pagination)
-  console.log('Fetched anime:', response.data)
+  const payload = response.data.data
+  paginationAtom.set(payload.pagination)
+  console.log('Fetched anime:', payload)
   if (append) {
-    animeListAtom.set((state) => {
-      return [...state, ...response.data.data,
-      ]
-    })
+    animeListAtom.set([...animeListAtom(), ...payload.data])
   } else {
-    animeListAtom.set(response.data.data)
+    animeListAtom.set(payload.data)
   }
   isLoadingInitialAtom.set(false)
   isLoadingMoreAtom.set(false)
@@ -110,7 +108,7 @@ export const fetchSelectedAnimeList = action(async () => {
   const response = await wrap(api.post('/media/batch', {
     ids: selectedAnime,
   }))
-  selectedAnimeListAtom.set(response.data)
+  selectedAnimeListAtom.set(response.data.data)
 }, 'fetchSelectedAnimeList').extend(withAsync())
 
 export const loadMoreAnimeAction = action((search: string) => {
