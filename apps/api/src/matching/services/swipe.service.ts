@@ -5,23 +5,24 @@ import {
 } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
 import { RoomStatus } from 'generated/prisma'
-import { MediaRepository } from '../../media/repositories/media.repository'
-import { RoomCacheRepository, RoomRepository } from '../../room/repositories'
+import { AbstractMediaRepository } from '../../media/interfaces'
+import { AbstractRoomCacheRepository, AbstractRoomRepository } from '../../room/interfaces'
 import { SwipeAction } from '../dto/swipes.dto'
-import { MatchingCacheRepository } from '../repositories/matching-cache.repository'
-import { RoomStateService } from './room-state.service'
+import { AbstractMatchingCacheRepository, AbstractRoomStateService, AbstractSwipeService } from '../interfaces'
 
 @Injectable()
-export class SwipeService {
+export class SwipeService extends AbstractSwipeService {
   private readonly logger = new Logger(SwipeService.name)
 
   constructor(
-    private readonly mediaRepository: MediaRepository,
-    private readonly roomRepo: RoomRepository,
-    private readonly roomCache: RoomCacheRepository,
-    private readonly matchingCache: MatchingCacheRepository,
-    private readonly roomStateService: RoomStateService,
-  ) {}
+    private readonly mediaRepository: AbstractMediaRepository,
+    private readonly roomRepo: AbstractRoomRepository,
+    private readonly roomCache: AbstractRoomCacheRepository,
+    private readonly matchingCache: AbstractMatchingCacheRepository,
+    private readonly roomStateService: AbstractRoomStateService,
+  ) {
+    super()
+  }
 
   async processSwipe(
     action: SwipeAction,

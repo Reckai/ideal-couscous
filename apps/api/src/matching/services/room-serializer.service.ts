@@ -1,18 +1,21 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { BaseRoomData, RoomData, RoomStatus as SharedRoomStatus } from '@netflix-tinder/shared'
-import { MediaRepository } from '../../media/repositories/media.repository'
+import { AbstractMediaRepository } from '../../media/interfaces'
 import { PrismaService } from '../../Prisma/prisma.service'
-import { RoomCacheRepository } from '../../room/repositories'
+import { AbstractRoomCacheRepository } from '../../room/interfaces'
+import { AbstractRoomSerializerService } from '../interfaces'
 
 @Injectable()
-export class RoomSerializerService {
+export class RoomSerializerService extends AbstractRoomSerializerService {
   private readonly logger = new Logger(RoomSerializerService.name)
 
   constructor(
-    private readonly roomCache: RoomCacheRepository,
+    private readonly roomCache: AbstractRoomCacheRepository,
     private readonly prisma: PrismaService,
-    private readonly mediaRepository: MediaRepository,
-  ) {}
+    private readonly mediaRepository: AbstractMediaRepository,
+  ) {
+    super()
+  }
 
   async getRoomData(roomId: string): Promise<BaseRoomData> {
     const users = await this.roomCache.getUsersInRoom(roomId)

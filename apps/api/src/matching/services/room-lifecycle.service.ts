@@ -5,10 +5,11 @@ import {
 import { WsException } from '@nestjs/websockets'
 import { RoomData } from '@netflix-tinder/shared'
 import { customAlphabet } from 'nanoid'
-import { RoomCacheRepository } from '../../room/repositories'
+import { AbstractRoomCacheRepository } from '../../room/interfaces'
+import { AbstractRoomLifecycleService } from '../interfaces'
 
 @Injectable()
-export class RoomLifecycleService {
+export class RoomLifecycleService extends AbstractRoomLifecycleService {
   private readonly logger = new Logger(RoomLifecycleService.name)
 
   private readonly generateInviteCode = customAlphabet(
@@ -40,8 +41,10 @@ export class RoomLifecycleService {
   ]
 
   constructor(
-    private readonly roomCache: RoomCacheRepository,
-  ) {}
+    private readonly roomCache: AbstractRoomCacheRepository,
+  ) {
+    super()
+  }
 
   async createRoom(userId: string): Promise<RoomData> {
     const roomId = this.generateInviteCode()

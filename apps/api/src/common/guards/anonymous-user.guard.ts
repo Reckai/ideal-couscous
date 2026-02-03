@@ -7,7 +7,7 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common'
-import { UserService } from '../../user'
+import { AbstractUserService } from '../../user/interfaces'
 
 /**
  * Cookie for storing the anonymous user ID
@@ -35,7 +35,7 @@ const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
 export class AnonymousUserGuard implements CanActivate {
   private readonly logger = new Logger(AnonymousUserGuard.name)
 
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: AbstractUserService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Only apply to HTTP requests (skip WebSocket)

@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common'
 import { Job } from 'bullmq'
 import { TmdbAdapter } from './adapters/tmdbAdapter/tmdb.adapter'
 import { MediaEntityDTO } from './dto/media.dto'
-import { MediaRepository } from './repositories/media.repository'
+import { AbstractMediaRepository } from './interfaces'
 
 interface SyncJobData {
   source: string
@@ -23,7 +23,7 @@ export class AnimeProcessor extends WorkerHost {
 
   constructor(
     private readonly animeAdapter: TmdbAdapter,
-    private readonly animeRepository: MediaRepository,
+    private readonly animeRepository: AbstractMediaRepository,
   ) {
     super()
   }

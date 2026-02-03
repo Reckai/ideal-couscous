@@ -2,8 +2,9 @@ import type { MediaEntityDTO, MediaQueryDto } from '../dto/media.dto'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { Media, Prisma } from 'generated/prisma'
 import { PrismaService } from '../../Prisma/prisma.service'
-
 import { DEFAULT_LIMIT, MAX_LIMIT, MIN_LIMIT } from '../consts'
+
+import { AbstractMediaRepository } from '../interfaces'
 
 interface DecodedCursor {
   createdAt: Date
@@ -17,10 +18,12 @@ export interface CursorPaginatedResult<T> {
 }
 
 @Injectable()
-export class MediaRepository {
+export class MediaRepository extends AbstractMediaRepository {
   private readonly logger = new Logger(MediaRepository.name)
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {
+    super()
+  }
 
   async findAllWithCursor(
     params: MediaQueryDto,

@@ -1,6 +1,7 @@
 import type { User } from 'generated/prisma'
 import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../Prisma/prisma.service'
+import { AbstractUserRepository } from './interfaces'
 
 /**
  * UserRepository - user operations in PostgreSQL
@@ -8,10 +9,12 @@ import { PrismaService } from '../Prisma/prisma.service'
  * v2: add methods for registration/login
  */
 @Injectable()
-export class UserRepository {
+export class UserRepository extends AbstractUserRepository {
   private readonly logger = new Logger(UserRepository.name)
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    super()
+  }
 
   /**
    * Create an anonymous user

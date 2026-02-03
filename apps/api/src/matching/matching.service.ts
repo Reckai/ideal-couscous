@@ -5,21 +5,26 @@ import { WsException } from '@nestjs/websockets'
 import { BaseRoomData, RoomData } from '@netflix-tinder/shared'
 import { RoomStatus } from 'generated/prisma'
 import { SwipeAction } from './dto/swipes.dto'
-import { RoomLifecycleService } from './services/room-lifecycle.service'
-import { RoomSerializerService } from './services/room-serializer.service'
-import { RoomStateService } from './services/room-state.service'
-import { SelectionService } from './services/selection.service'
-import { SwipeService } from './services/swipe.service'
+import {
+  AbstractMatchingService,
+  AbstractRoomLifecycleService,
+  AbstractRoomSerializerService,
+  AbstractRoomStateService,
+  AbstractSelectionService,
+  AbstractSwipeService,
+} from './interfaces'
 
 @Injectable()
-export class MatchingService {
+export class MatchingService extends AbstractMatchingService {
   constructor(
-    private readonly roomLifecycle: RoomLifecycleService,
-    private readonly roomState: RoomStateService,
-    private readonly selection: SelectionService,
-    private readonly swipe: SwipeService,
-    private readonly roomSerializer: RoomSerializerService,
-  ) {}
+    private readonly roomLifecycle: AbstractRoomLifecycleService,
+    private readonly roomState: AbstractRoomStateService,
+    private readonly selection: AbstractSelectionService,
+    private readonly swipe: AbstractSwipeService,
+    private readonly roomSerializer: AbstractRoomSerializerService,
+  ) {
+    super()
+  }
 
   // Room Lifecycle
   async createRoom(userId: string): Promise<RoomData> {

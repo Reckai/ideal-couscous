@@ -1,0 +1,7 @@
+export { AbstractMatchingCacheRepository } from './matching-cache-repository.abstract'
+export { AbstractMatchingService } from './matching-service.abstract'
+export { AbstractRoomLifecycleService } from './room-lifecycle-service.abstract'
+export { AbstractRoomSerializerService } from './room-serializer-service.abstract'
+export { AbstractRoomStateService } from './room-state-service.abstract'
+export { AbstractSelectionService } from './selection-service.abstract'
+export { AbstractSwipeService } from './swipe-service.abstract'

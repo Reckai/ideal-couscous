@@ -2,6 +2,7 @@ import type { Room } from 'generated/prisma'
 import { Injectable, Logger } from '@nestjs/common'
 import { $Enums, Prisma } from 'generated/prisma'
 import { PrismaService } from '../../Prisma/prisma.service'
+import { AbstractRoomRepository } from '../interfaces'
 import RoomStatus = $Enums.RoomStatus
 
 export type RoomWithRelations = Prisma.RoomGetPayload<{
@@ -45,7 +46,7 @@ export type RoomBasic = Pick<
 >
 
 @Injectable()
-export class RoomRepository {
+export class RoomRepository extends AbstractRoomRepository {
   private readonly logger = new Logger(RoomRepository.name)
 
   private readonly ROOM_INCLUDE = {
@@ -69,7 +70,9 @@ export class RoomRepository {
     },
   } as const
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    super()
+  }
 
   /**
    * Create a new room

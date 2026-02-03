@@ -1,14 +1,16 @@
 import type { OnModuleDestroy } from '@nestjs/common'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { AbstractDisconnectTimerService } from '../interfaces'
 
 @Injectable()
-export class DisconnectTimerService implements OnModuleDestroy {
+export class DisconnectTimerService extends AbstractDisconnectTimerService implements OnModuleDestroy {
   private readonly logger = new Logger(DisconnectTimerService.name)
   private timers = new Map<string, NodeJS.Timeout>()
   private readonly timeout: number
 
   constructor(private readonly configService: ConfigService) {
+    super()
     this.timeout = (this.configService.get<number>('room.ttlMinutes', 30)) * 60 * 1000
   }
 

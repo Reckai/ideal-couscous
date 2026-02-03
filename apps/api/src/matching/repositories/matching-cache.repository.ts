@@ -3,9 +3,10 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { REDIS_KEYS } from '../../common/redis-keys'
 import { RedisService } from '../../redis/redis.service'
+import { AbstractMatchingCacheRepository } from '../interfaces'
 
 @Injectable()
-export class MatchingCacheRepository {
+export class MatchingCacheRepository extends AbstractMatchingCacheRepository {
   private readonly logger = new Logger(MatchingCacheRepository.name)
   private readonly ROOM_TTL: number
   private readonly KEYS = REDIS_KEYS
@@ -14,6 +15,7 @@ export class MatchingCacheRepository {
     private readonly redis: RedisService,
     private readonly configService: ConfigService,
   ) {
+    super()
     this.ROOM_TTL = this.configService.get<number>('room.ttlMinutes') * 60
   }
 

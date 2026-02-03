@@ -6,6 +6,7 @@ import { RoomStatus } from 'generated/prisma'
 import { REDIS_KEYS } from '../../common/redis-keys'
 import { User } from '../../matching/types/user'
 import { RedisService } from '../../redis/redis.service'
+import { AbstractRoomCacheRepository } from '../interfaces'
 
 /**
  * Room state structure in Redis
@@ -21,7 +22,7 @@ export interface RoomState {
  * Repository for working with Room data in Redis
  */
 @Injectable()
-export class RoomCacheRepository {
+export class RoomCacheRepository extends AbstractRoomCacheRepository {
   private readonly logger = new Logger(RoomCacheRepository.name)
   private readonly ROOM_TTL: number
 
@@ -31,6 +32,7 @@ export class RoomCacheRepository {
     private readonly redis: RedisService,
     private readonly configService: ConfigService,
   ) {
+    super()
     this.ROOM_TTL = this.configService.get<number>('room.ttlMinutes') * 60
   }
 

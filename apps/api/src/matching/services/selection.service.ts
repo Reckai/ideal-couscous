@@ -1,14 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
-import { RoomCacheRepository } from '../../room/repositories'
+import { AbstractRoomCacheRepository } from '../../room/interfaces'
+import { AbstractSelectionService } from '../interfaces'
 
 @Injectable()
-export class SelectionService {
+export class SelectionService extends AbstractSelectionService {
   private readonly logger = new Logger(SelectionService.name)
 
   constructor(
-    private readonly roomCache: RoomCacheRepository,
-  ) {}
+    private readonly roomCache: AbstractRoomCacheRepository,
+  ) {
+    super()
+  }
 
   async addMediaToDraft(
     userId: string,

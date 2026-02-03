@@ -5,18 +5,20 @@ import {
 } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
 import { RoomStatus } from 'generated/prisma'
-import { DisconnectTimerService } from 'src/room/services/disconnectTime.service'
-import { RoomCacheRepository, RoomRepository } from '../../room/repositories'
+import { AbstractDisconnectTimerService, AbstractRoomCacheRepository, AbstractRoomRepository } from '../../room/interfaces'
+import { AbstractRoomStateService } from '../interfaces'
 
 @Injectable()
-export class RoomStateService {
+export class RoomStateService extends AbstractRoomStateService {
   private readonly logger = new Logger(RoomStateService.name)
 
   constructor(
-    private readonly roomCache: RoomCacheRepository,
-    private readonly roomRepo: RoomRepository,
-    private readonly disconnectTimerService: DisconnectTimerService,
-  ) {}
+    private readonly roomCache: AbstractRoomCacheRepository,
+    private readonly roomRepo: AbstractRoomRepository,
+    private readonly disconnectTimerService: AbstractDisconnectTimerService,
+  ) {
+    super()
+  }
 
   async validateRoomStatus(roomId: string): Promise<RoomState> {
     const room = await this.roomCache.getRoomState(roomId)

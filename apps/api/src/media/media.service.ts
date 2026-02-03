@@ -1,11 +1,13 @@
 import type { MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { MediaDto } from './dto/media.dto'
-import { MediaRepository } from './repositories/media.repository'
+import { AbstractMediaRepository, AbstractMediaService } from './interfaces'
 
 @Injectable()
-export class MediaService {
-  constructor(private readonly mediaRepository: MediaRepository) { }
+export class MediaService extends AbstractMediaService {
+  constructor(private readonly mediaRepository: AbstractMediaRepository) {
+    super()
+  }
 
   async findAll(query: MediaQueryDto): Promise<MediaListResponseDto> {
     const result = await this.mediaRepository.findAllWithCursor(query)

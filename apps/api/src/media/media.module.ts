@@ -2,6 +2,7 @@ import { HttpModule } from '@nestjs/axios'
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
 import { TmdbAdapter } from './adapters/tmdbAdapter/tmdb.adapter'
+import { AbstractMediaRepository, AbstractMediaService } from './interfaces'
 import { MediaController } from './media.controller'
 import { AnimeProcessor } from './media.processor'
 import { AnimeScheduler } from './media.scheduler'
@@ -14,10 +15,15 @@ import { MediaRepository } from './repositories/media.repository'
     BullModule.registerQueue({
       name: 'anime-sync-queue',
     }),
-
   ],
-  providers: [MediaService, MediaRepository, TmdbAdapter, AnimeProcessor, AnimeScheduler],
+  providers: [
+    { provide: AbstractMediaService, useClass: MediaService },
+    { provide: AbstractMediaRepository, useClass: MediaRepository },
+    TmdbAdapter,
+    AnimeProcessor,
+    AnimeScheduler,
+  ],
   controllers: [MediaController],
-  exports: [MediaService, MediaRepository, TmdbAdapter, BullModule],
+  exports: [AbstractMediaService, AbstractMediaRepository, TmdbAdapter, BullModule],
 })
 export class MediaModule {}

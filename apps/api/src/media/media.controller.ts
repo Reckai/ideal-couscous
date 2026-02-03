@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
 import { GetAnimeBatchDto, MediaDto, MediaListResponseDto, MediaQueryDto } from './dto/media.dto'
-import { MediaService } from './media.service'
+import { AbstractMediaService } from './interfaces'
 
 @Controller('media')
 export class MediaController {
-  constructor(private readonly mediaService: MediaService) { }
+  constructor(private readonly mediaService: AbstractMediaService) { }
 
   @Get()
   async findAll(@Query() query: MediaQueryDto): Promise<MediaListResponseDto> {

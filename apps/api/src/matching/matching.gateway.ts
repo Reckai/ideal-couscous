@@ -23,10 +23,10 @@ import {
 import { parse as parseCookies } from 'cookie'
 import { WsExceptionFilter } from 'src/core/filters/ws-exception.filter'
 import { LoggingInterceptor } from 'src/core/interceptors/logging.interceptor'
-import { DisconnectTimerService } from 'src/room/services/disconnectTime.service'
+import { AbstractDisconnectTimerService } from 'src/room/interfaces'
 import { v4 as uuidv4 } from 'uuid'
 import { SwipeAction } from './dto/swipes.dto'
-import { MatchingService } from './matching.service'
+import { AbstractMatchingService } from './interfaces'
 
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
@@ -48,7 +48,7 @@ implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(MatchingGateway.name)
 
-  constructor(private readonly matchingService: MatchingService, private readonly disconnectTimerService: DisconnectTimerService) { }
+  constructor(private readonly matchingService: AbstractMatchingService, private readonly disconnectTimerService: AbstractDisconnectTimerService) { }
 
   async handleConnection(client: TypedSocket) {
     try {

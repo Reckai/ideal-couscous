@@ -1,6 +1,6 @@
 import type { User } from 'generated/prisma'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { UserRepository } from './user.repository'
+import { AbstractUserRepository, AbstractUserService } from './interfaces'
 
 /**
  * UserService - business logic for user management
@@ -8,8 +8,10 @@ import { UserRepository } from './user.repository'
  * v2: add registration, login, profiles
  */
 @Injectable()
-export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+export class UserService extends AbstractUserService {
+  constructor(private readonly userRepository: AbstractUserRepository) {
+    super()
+  }
 
   /**
    * Create an anonymous user

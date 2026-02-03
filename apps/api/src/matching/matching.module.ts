@@ -2,6 +2,15 @@ import { Module } from '@nestjs/common'
 import { MediaModule } from '../media/media.module'
 import { RoomModule } from '../room/room.module'
 import { UserModule } from '../user'
+import {
+  AbstractMatchingCacheRepository,
+  AbstractMatchingService,
+  AbstractRoomLifecycleService,
+  AbstractRoomSerializerService,
+  AbstractRoomStateService,
+  AbstractSelectionService,
+  AbstractSwipeService,
+} from './interfaces'
 import { MatchingGateway } from './matching.gateway'
 import { MatchingService } from './matching.service'
 import { MatchingCacheRepository } from './repositories/matching-cache.repository'
@@ -15,14 +24,14 @@ import { SwipeService } from './services/swipe.service'
   imports: [RoomModule, UserModule, MediaModule],
   providers: [
     MatchingGateway,
-    MatchingService,
-    RoomLifecycleService,
-    RoomStateService,
-    SelectionService,
-    SwipeService,
-    RoomSerializerService,
-    MatchingCacheRepository,
+    { provide: AbstractMatchingService, useClass: MatchingService },
+    { provide: AbstractRoomLifecycleService, useClass: RoomLifecycleService },
+    { provide: AbstractRoomStateService, useClass: RoomStateService },
+    { provide: AbstractSelectionService, useClass: SelectionService },
+    { provide: AbstractSwipeService, useClass: SwipeService },
+    { provide: AbstractRoomSerializerService, useClass: RoomSerializerService },
+    { provide: AbstractMatchingCacheRepository, useClass: MatchingCacheRepository },
   ],
-  exports: [MatchingService],
+  exports: [AbstractMatchingService],
 })
 export class MatchingModule {}

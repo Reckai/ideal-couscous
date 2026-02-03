@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { UserModule } from '../user'
+import { AbstractDisconnectTimerService, AbstractRoomCacheRepository, AbstractRoomRepository } from './interfaces'
 import { RoomCacheRepository, RoomRepository } from './repositories'
 import { DisconnectTimerService } from './services/disconnectTime.service'
 
@@ -7,10 +8,10 @@ import { DisconnectTimerService } from './services/disconnectTime.service'
   imports: [UserModule], // Needed for AnonymousUserGuard in RoomController
   controllers: [],
   providers: [
-    DisconnectTimerService,
-    RoomRepository, // PostgreSQL operations
-    RoomCacheRepository,
+    { provide: AbstractDisconnectTimerService, useClass: DisconnectTimerService },
+    { provide: AbstractRoomRepository, useClass: RoomRepository },
+    { provide: AbstractRoomCacheRepository, useClass: RoomCacheRepository },
   ],
-  exports: [DisconnectTimerService, RoomRepository, RoomCacheRepository],
+  exports: [AbstractDisconnectTimerService, AbstractRoomRepository, AbstractRoomCacheRepository],
 })
 export class RoomModule {}
