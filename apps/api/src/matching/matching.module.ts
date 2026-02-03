@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { MediaModule } from '../media/media.module'
 import { RoomModule } from '../room/room.module'
 import { UserModule } from '../user'
 import { MatchingGateway } from './matching.gateway'
@@ -11,7 +12,7 @@ import { SelectionService } from './services/selection.service'
 import { SwipeService } from './services/swipe.service'
 
 @Module({
-  imports: [RoomModule, UserModule],
+  imports: [RoomModule, UserModule, MediaModule],
   providers: [
     MatchingGateway,
     MatchingService,

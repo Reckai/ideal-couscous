@@ -1,6 +1,5 @@
 import type { RoomState } from '../../room/repositories'
 import {
-  BadRequestException,
   Injectable,
   Logger,
 } from '@nestjs/common'
@@ -22,11 +21,11 @@ export class RoomStateService {
   async validateRoomStatus(roomId: string): Promise<RoomState> {
     const room = await this.roomCache.getRoomState(roomId)
     if (!room) {
-      throw new BadRequestException('Room not found')
+      throw new WsException('Room not found')
     }
 
     if (room.status !== RoomStatus.SWIPING) {
-      throw new BadRequestException(
+      throw new WsException(
         `Room is not in SWIPING state. Current status: ${room.status}`,
       )
     }
@@ -56,7 +55,7 @@ export class RoomStateService {
     ])
 
     if (hostId !== userId || status !== 'WAITING' || usersCount < 2) {
-      throw new BadRequestException('You can\'t start selection in this room')
+      throw new WsException('You can\'t start selection in this room')
     }
 
     await this.roomCache.updateRoomStatus(roomId, 'SELECTING')

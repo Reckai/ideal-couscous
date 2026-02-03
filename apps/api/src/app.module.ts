@@ -7,7 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AnonymousUserGuard } from './common/guards/anonymous-user.guard'
-import configuration from './config/configutation'
+import configuration from './config/configuration'
 import { MatchingModule } from './matching/matching.module'
 import { MediaModule } from './media/media.module'
 import { PrismaModule } from './Prisma/prisma.module'
@@ -35,7 +35,7 @@ import { UserModule } from './user'
     }),
     PrismaModule,
     RedisModule,
-    UserModule, // MVP v1: Анонимные пользователи
+    UserModule, // MVP v1: Anonymous users
     RoomModule,
     MediaModule,
     MatchingModule,

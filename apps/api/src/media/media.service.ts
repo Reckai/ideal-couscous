@@ -29,9 +29,6 @@ export class MediaService {
 
   async findByIds(ids: string[]): Promise<MediaDto[]> {
     const result = await this.mediaRepository.findManyByIds(ids)
-    if (!result) {
-      throw new NotFoundException(`Smt weng wrong`)
-    }
-    return [...result.map((media) => MediaDto.fromPrisma(media))]
+    return result.map((media) => MediaDto.fromPrisma(media))
   }
 }

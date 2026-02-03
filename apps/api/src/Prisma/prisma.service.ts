@@ -25,16 +25,15 @@ export class PrismaService
       errorFormat: 'colorless',
     })
 
-    // Логирование запросов в development режиме
     if (process.env.NODE_ENV === 'development') {
-      this.$on('query' as never, (e: any) => {
+      this.$on('query' as never, (e: { query: string, duration: number }) => {
         this.logger.debug(`Query: ${e.query}`)
         this.logger.debug(`Duration: ${e.duration}ms`)
       })
     }
 
-    this.$on('error' as never, (e: any) => {
-      this.logger.error(e)
+    this.$on('error' as never, (e: { message: string }) => {
+      this.logger.error(e.message)
     })
   }
 
@@ -58,13 +57,12 @@ export class PrismaService
       throw new Error('Cannot clean database in production!')
     }
 
-    const models = Reflect.ownKeys(this).filter(
-      (key) => key[0] !== '_' && key[0] !== '$',
-    )
-
-    return Promise.all(
-      models.map((modelKey) => (this as any)[modelKey].deleteMany()),
-    )
+    return this.$transaction([
+      this.roomMatch.deleteMany(),
+      this.room.deleteMany(),
+      this.media.deleteMany(),
+      this.user.deleteMany(),
+    ])
   }
 
   async isHealthy(): Promise<boolean> {

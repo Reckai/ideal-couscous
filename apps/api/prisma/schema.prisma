@@ -33,14 +33,14 @@ model User {
   hostedRooms Room[] @relation("HostRooms")
   guestRooms  Room[] @relation("GuestRooms")
 
-  // MVP v1: анонимные пользователи (name nullable)
-  // В v2: добавить email String? @unique для логина зарегистрированных
+  // MVP v1: anonymous users (name nullable)
+  // In v2: add email String? @unique for registered user login
   name        String?
 
-  // Флаг для различия анонимных и зарегистрированных пользователей
+  // Flag to distinguish anonymous and registered users
   isAnonymous Boolean @default(true) @map("is_anonymous")
 
-  // В v2: добавить обратно для зарегистрированных пользователей:
+  // In v2: add back for registered users:
   // email         String?   @unique
   // passwordHash  String?   @map("password_hash")
   // lastLoginAt   DateTime? @map("last_login_at")
@@ -68,7 +68,7 @@ model Room {
   updatedAt   DateTime   @updatedAt @map("updated_at")
   expiresAt   DateTime   @map("expires_at")
 
-  // ONE-TO-ONE relation (пока)
+  // ONE-TO-ONE relation (for now)
   match       RoomMatch?
 
   @@index([status, expiresAt])
@@ -78,33 +78,28 @@ model Room {
 model RoomMatch {
   id        String   @id @default(uuid())
 
-  roomId    String   @unique @map("room_id")  // ← UNIQUE = ONE-TO-ONE
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId    String   @unique @map("room_id")
+  room      Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
   mediaId   String   @map("media_id")
   media     Media    @relation(fields: [mediaId], references: [id])
 
   matchedAt DateTime @default(now()) @map("matched_at")
 
-  // Опционально: метаданные (можно добавить позже)
+  // Optional: metadata (can be added later)
   // swipesCount Int?
   // matchDurationMs Int?
 
-  @@index([mediaId])      // Для аналитики
-  @@index([matchedAt])    // Для истории
+  @@index([mediaId])      // For analytics
+  @@index([matchedAt])    // For history
   @@map("room_matches")
 }
 
 enum RoomStatus {
-  WAITING        // Ждем второго пользователя
-  SELECTING      // Оба выбирают фильмы
-  READY          // Оба выбрали, готовы свайпать
-  SWIPING        // Идет процесс свайпинга
-  MATCHED        // Нашли совпадение
-  CANCELLED      // Кто-то вышел
-}
-enum MatchStatus {
-  PENDING        // Еще свайпают
-  MATCHED        // Оба лайкнули
-  REJECTED       // Хотя бы один skip
+  WAITING        // Waiting for the second user
+  SELECTING      // Both users are selecting movies
+  READY          // Both have selected, ready to swipe
+  SWIPING        // Swiping is in progress
+  MATCHED        // Found a match
+  CANCELLED      // Someone left
 }

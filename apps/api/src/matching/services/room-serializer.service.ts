@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { BaseRoomData, RoomData, RoomStatus as SharedRoomStatus } from '@netflix-tinder/shared'
+import { MediaRepository } from '../../media/repositories/media.repository'
 import { PrismaService } from '../../Prisma/prisma.service'
 import { RoomCacheRepository } from '../../room/repositories'
 
@@ -10,6 +11,7 @@ export class RoomSerializerService {
   constructor(
     private readonly roomCache: RoomCacheRepository,
     private readonly prisma: PrismaService,
+    private readonly mediaRepository: MediaRepository,
   ) {}
 
   async getRoomData(roomId: string): Promise<BaseRoomData> {
@@ -55,12 +57,17 @@ export class RoomSerializerService {
           mediaQueue: mediaPool,
         }
       }
-      case 'MATCHED':
+      case 'MATCHED': {
+        const match = await this.prisma.roomMatch.findUnique({
+          where: { roomId },
+          select: { id: true },
+        })
         return {
           ...basicData,
           status: 'MATCHED',
-          matchId: '2511d0b7-2067-423c-a082-c29377cd8551',
+          matchId: match?.id ?? null,
         }
+      }
       default:
         throw new NotFoundException('Room not found')
     }
@@ -68,12 +75,7 @@ export class RoomSerializerService {
 
   async getMediaPoolWithDetails(roomId: string) {
     const mediaIds = await this.roomCache.getMediaPool(roomId)
-
-    const media = await this.prisma.media.findMany({
-      where: { id: { in: mediaIds } },
-      select: { id: true, title: true, posterPath: true },
-    })
-
+    const media = await this.mediaRepository.findManyByIds(mediaIds)
     return mediaIds.map((id) => media.find((m) => m.id === id))
   }
 }

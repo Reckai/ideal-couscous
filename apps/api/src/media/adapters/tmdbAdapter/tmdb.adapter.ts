@@ -26,12 +26,16 @@ export class TmdbAdapter {
 
   async fetchAndAdaptPage(page: number): Promise<MediaEntityDTO[]> {
     try {
-      const url = `${this.TMDB_API}/discover/movie?api_key=${this.API_KEY}&sort_by=popularity.desc&language=ru-RU&page=${page}`
+      const url = `${this.TMDB_API}/discover/movie?sort_by=popularity.desc&language=ru-RU&page=${page}`
 
-      const reposnse: TmdbRawResponse = await firstValueFrom(this.httpService.get(url))
-      return reposnse.data.results.filter((media) => media.poster_path !== null).map((media) => this.toDomain(media))
+      const response: TmdbRawResponse = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${this.API_KEY}` },
+        }),
+      )
+      return response.data.results.filter((media) => media.poster_path !== null).map((media) => this.toDomain(media))
     } catch (error) {
-      this.logger.error(`Ошибка при скачивании страницы ${page}: ${error.message}`)
+      this.logger.error(`Failed to fetch page ${page}: ${error.message}`)
       throw error
     }
   }

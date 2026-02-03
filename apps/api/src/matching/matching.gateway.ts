@@ -33,6 +33,7 @@ type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServe
 
 @UseFilters(new WsExceptionFilter())
 @UseInterceptors(LoggingInterceptor)
+// process.env is used here because the decorator is evaluated at class load time, before DI is available
 @WebSocketGateway({
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -410,7 +411,7 @@ implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      const newStatus = await this.matchingService.setUserRediness(currentRoomId, userId, data.isReady)
+      const newStatus = await this.matchingService.setUserReadiness(currentRoomId, userId, data.isReady)
 
       // Notify other user about readiness change
       client.to(currentRoomId).emit('user_ready_changed', { userId, isReady: data.isReady })
@@ -433,16 +434,53 @@ implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('swipe')
   async handleSwipe(
-    @ConnectedSocket()client: TypedSocket,
+    @ConnectedSocket() client: TypedSocket,
     @MessageBody() data: { mediaId: string, action: SwipeAction },
   ): Promise<AckResponse<void> | AckError> {
     const { userId, roomId } = client.data
-    const result = await this.matchingService.processSwipe(data.action, userId, roomId, data.mediaId)
 
-    if (result.isMatch && result.matchData) {
-      this.server.to(roomId).emit('match_found', result.matchData)
-      this.logger.log('Match founds')
+    if (!userId) {
+      return {
+        success: false,
+        error: { message: 'User is not authenticated', code: 'UNAUTHENTICATED' },
+      }
     }
-    return { success: true, data: undefined }
+
+    if (!roomId) {
+      return {
+        success: false,
+        error: { message: 'User is not in a room', code: 'NOT_IN_ROOM' },
+      }
+    }
+
+    if (!data?.mediaId) {
+      return {
+        success: false,
+        error: { message: 'Media ID is required', code: 'INVALID_PAYLOAD' },
+      }
+    }
+
+    if (!data.action || !Object.values(SwipeAction).includes(data.action)) {
+      return {
+        success: false,
+        error: { message: 'Valid swipe action is required', code: 'INVALID_PAYLOAD' },
+      }
+    }
+
+    try {
+      const result = await this.matchingService.processSwipe(data.action, userId, roomId, data.mediaId)
+
+      if (result.isMatch && result.matchData) {
+        this.server.to(roomId).emit('match_found', result.matchData)
+        this.logger.log('Match found')
+      }
+      return { success: true, data: undefined }
+    } catch (error) {
+      this.logger.error(`Swipe error: ${error.message}`)
+      return {
+        success: false,
+        error: { message: error.message || 'Failed to process swipe', code: 'SWIPE_FAILED' },
+      }
+    }
   }
 }

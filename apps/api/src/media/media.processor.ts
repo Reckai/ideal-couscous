@@ -14,8 +14,8 @@ interface JobResult { status: string, count: number, reason?: string }
 @Processor('anime-sync-queue', {
   concurrency: 10,
   limiter: {
-    max: 5, // не более 5 задач
-    duration: 1000, // в секунду
+    max: 5, // no more than 5 jobs
+    duration: 1000, // per second
   },
 })
 export class AnimeProcessor extends WorkerHost {
@@ -40,7 +40,7 @@ export class AnimeProcessor extends WorkerHost {
       return { status: 'success', count: affectedRows }
     } catch (error) {
       this.logger.error(`Job ${job.id} failed: ${error.message}`, error.stack)
-      // Выброс ошибки заставит BullMQ использовать механизм повторных попыток (attempts)
+      // Throwing the error will make BullMQ use its retry mechanism (attempts)
       throw error
     }
   }

@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 /**
- * Zod schema для валидации environment variables
+ * Zod schema for validating environment variables
  */
 export const environmentSchema = z.object({
   // Node
@@ -63,12 +63,12 @@ export const environmentSchema = z.object({
 })
 
 /**
- * Инферим TypeScript тип из Zod schema
+ * Infer TypeScript type from Zod schema
  */
 export type Environment = z.infer<typeof environmentSchema>
 
 /**
- * Функция валидации environment variables
+ * Environment variables validation function
  */
 export function validateEnvironment(
   config: Record<string, unknown>,

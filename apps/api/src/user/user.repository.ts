@@ -3,9 +3,9 @@ import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../Prisma/prisma.service'
 
 /**
- * UserRepository - работа с пользователями в PostgreSQL
- * MVP v1: поддержка только анонимных пользователей
- * v2: добавить методы для регистрации/логина
+ * UserRepository - user operations in PostgreSQL
+ * MVP v1: anonymous users only
+ * v2: add methods for registration/login
  */
 @Injectable()
 export class UserRepository {
@@ -14,11 +14,11 @@ export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Создать анонимного пользователя
-   * Генерируется случайное имя типа "Guest_AB12CD"
+   * Create an anonymous user
+   * Generates a random name like "Guest_AB12CD"
    *
-   * @param name - опциональное имя (если не передано, генерируется автоматически)
-   * @returns Созданный пользователь
+   * @param name - optional name (if not provided, generated automatically)
+   * @returns Created user
    */
   async createAnonymous(name?: string): Promise<User> {
     const userName = name || this.generateGuestName()
@@ -42,10 +42,10 @@ export class UserRepository {
   }
 
   /**
-   * Найти пользователя по ID
+   * Find a user by ID
    *
-   * @param userId - UUID пользователя
-   * @returns Пользователь или null
+   * @param userId - user UUID
+   * @returns User or null
    */
   async findById(userId: string): Promise<User | null> {
     try {
@@ -61,10 +61,10 @@ export class UserRepository {
   }
 
   /**
-   * Проверить существование пользователя
+   * Check if a user exists
    *
-   * @param userId - UUID пользователя
-   * @returns true если пользователь существует
+   * @param userId - user UUID
+   * @returns true if the user exists
    */
   async exists(userId: string): Promise<boolean> {
     try {
@@ -81,9 +81,9 @@ export class UserRepository {
   }
 
   /**
-   * Удалить пользователя (для cleanup)
+   * Delete a user (for cleanup)
    *
-   * @param userId - UUID пользователя
+   * @param userId - user UUID
    */
   async delete(userId: string): Promise<void> {
     this.logger.debug(`Deleting user ${userId}`)
@@ -102,12 +102,12 @@ export class UserRepository {
   }
 
   // ============================================================================
-  // ПРИВАТНЫЕ МЕТОДЫ
+  // PRIVATE METHODS
   // ============================================================================
 
   /**
-   * Генерирует случайное имя гостя формата "Guest_XXXXXX"
-   * Использует base36 для компактности (6 символов = ~2 млрд комбинаций)
+   * Generates a random guest name in the format "Guest_XXXXXX"
+   * Uses base36 for compactness (6 characters = ~2 billion combinations)
    */
   private generateGuestName(): string {
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()

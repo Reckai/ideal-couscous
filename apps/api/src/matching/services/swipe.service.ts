@@ -1,12 +1,11 @@
 import type { MatchFoundDTO } from '../dto/swipes.dto'
 import {
-  BadRequestException,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common'
+import { WsException } from '@nestjs/websockets'
 import { RoomStatus } from 'generated/prisma'
-import { PrismaService } from '../../Prisma/prisma.service'
+import { MediaRepository } from '../../media/repositories/media.repository'
 import { RoomCacheRepository, RoomRepository } from '../../room/repositories'
 import { SwipeAction } from '../dto/swipes.dto'
 import { MatchingCacheRepository } from '../repositories/matching-cache.repository'
@@ -17,7 +16,7 @@ export class SwipeService {
   private readonly logger = new Logger(SwipeService.name)
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly mediaRepository: MediaRepository,
     private readonly roomRepo: RoomRepository,
     private readonly roomCache: RoomCacheRepository,
     private readonly matchingCache: MatchingCacheRepository,
@@ -32,12 +31,12 @@ export class SwipeService {
   ): Promise<{ isMatch: boolean, matchData?: MatchFoundDTO }> {
     const room = await this.roomStateService.validateRoomStatus(roomId)
     if (!room) {
-      throw new NotFoundException('Room not found')
+      throw new WsException('Room not found')
     }
 
     const isMember = await this.roomCache.isUserInRoom(roomId, userId)
     if (!isMember) {
-      throw new BadRequestException('You are not a member of this room')
+      throw new WsException('You are not a member of this room')
     }
 
     const users = await this.roomCache.getUsersInRoom(roomId)
@@ -68,12 +67,10 @@ export class SwipeService {
 
     this.logger.log(`MATCH found in room ${roomId} for media ${mediaId}`)
 
-    const media = await this.prisma.media.findUnique({
-      where: { id: mediaId },
-    })
+    const media = await this.mediaRepository.findById(mediaId)
 
     if (!media) {
-      throw new BadRequestException('Media not found')
+      throw new WsException('Media not found')
     }
 
     await this.saveMatchAndUpdateRoom(roomId, mediaId)
@@ -93,13 +90,8 @@ export class SwipeService {
   }
 
   private async saveMatchAndUpdateRoom(roomId: string, mediaId: string): Promise<void> {
-    try {
-      await this.roomRepo.createMatch(roomId, mediaId)
-      await this.roomRepo.updateStatus(roomId, RoomStatus.MATCHED)
-      await this.roomCache.updateRoomStatus(roomId, RoomStatus.MATCHED)
-      this.logger.log(`Match saved and room ${roomId} status updated to MATCHED`)
-    } catch (err) {
-      this.logger.error(`Failed to save match/update room: ${err.message}`)
-    }
+    await this.roomRepo.createMatch(roomId, mediaId)
+    await this.roomCache.updateRoomStatus(roomId, RoomStatus.MATCHED)
+    this.logger.log(`Match saved and room ${roomId} status updated to MATCHED`)
   }
 }

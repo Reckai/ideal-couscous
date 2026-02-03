@@ -3,12 +3,12 @@ import { UserRepository } from './user.repository'
 import { UserService } from './user.service'
 
 /**
- * UserModule - модуль управления пользователями
- * Global module для доступа из любого модуля приложения
+ * UserModule - user management module
+ * Global module for access from any application module
  *
  * Exports:
- * - UserService: для работы с пользователями в других модулях
- * - UserRepository: для прямого доступа к данным (если нужно)
+ * - UserService: for working with users in other modules
+ * - UserRepository: for direct data access (if needed)
  */
 @Module({
   providers: [UserService, UserRepository],

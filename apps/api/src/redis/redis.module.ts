@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common'
 import { RedisService } from './redis.service'
 
 /**
- * @Global - RedisService доступен во всех модулях
+ * @Global - RedisService is available in all modules
  */
 @Global()
 @Module({

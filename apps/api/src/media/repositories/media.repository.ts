@@ -121,7 +121,7 @@ export class MediaRepository {
         },
       })
     } catch (error) {
-      this.logger.error(`Filed to find media by id: ${error.message}`)
+      this.logger.error(`Failed to find media by id: ${error.message}`)
       throw error
     }
   }
@@ -150,7 +150,7 @@ export class MediaRepository {
         },
       })
     } catch (error) {
-      this.logger.error(`Filed to find media by title: ${error.message}`)
+      this.logger.error(`Failed to find media by title: ${error.message}`)
       throw error
     }
   }
@@ -165,7 +165,7 @@ export class MediaRepository {
         },
       })
     } catch (error) {
-      this.logger.error(`Filed to find medias by ids: ${error.message}`)
+      this.logger.error(`Failed to find medias by ids: ${error.message}`)
       throw error
     }
   }

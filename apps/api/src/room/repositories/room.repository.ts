@@ -48,16 +48,37 @@ export type RoomBasic = Pick<
 export class RoomRepository {
   private readonly logger = new Logger(RoomRepository.name)
 
+  private readonly ROOM_INCLUDE = {
+    host: {
+      select: { id: true, name: true },
+    },
+    guest: {
+      select: { id: true, name: true },
+    },
+    match: {
+      include: {
+        media: {
+          select: {
+            id: true,
+            tmdbId: true,
+            title: true,
+            posterPath: true,
+          },
+        },
+      },
+    },
+  } as const
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Создать новую комнату
+   * Create a new room
    *
-   * @param hostId - ID пользователя-создателя
-   * @param inviteCode - Уникальный 6-значный код
-   * @param expiresAt - Когда комната истекает (обычно +30 минут)
-   * @param preferences - Опциональные фильтры для медиа
-   * @returns Комната с host relation
+   * @param hostId - ID of the user who creates the room
+   * @param inviteCode - Unique 6-character code
+   * @param expiresAt - When the room expires (usually +30 minutes)
+   * @param preferences - Optional media filters
+   * @returns Room with host relation
    */
   async create(
     hostId: string,
@@ -75,26 +96,7 @@ export class RoomRepository {
           preferences: preferences ?? Prisma.JsonNull,
           status: RoomStatus.WAITING,
         },
-        include: {
-          host: {
-            select: { id: true, name: true },
-          },
-          guest: {
-            select: { id: true, name: true },
-          },
-          match: {
-            include: {
-              media: {
-                select: {
-                  id: true,
-                  tmdbId: true,
-                  title: true,
-                  posterPath: true,
-                },
-              },
-            },
-          },
-        },
+        include: this.ROOM_INCLUDE,
       })
     } catch (error) {
       this.logger.error(`Failed to create room: ${error.message}`, error.stack)
@@ -103,41 +105,16 @@ export class RoomRepository {
   }
 
   /**
-   * Найти комнату по ID с полными relations
+   * Find room by ID with full relations
    *
-   * @param roomId - UUID комнаты
-   * @returns Комната или null если не найдена
+   * @param roomId - Room UUID
+   * @returns Room or null if not found
    */
   async findById(roomId: string): Promise<RoomWithRelations | null> {
     try {
       return await this.prisma.room.findUnique({
         where: { id: roomId },
-        include: {
-          host: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          guest: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          match: {
-            include: {
-              media: {
-                select: {
-                  id: true,
-                  tmdbId: true,
-                  title: true,
-                  posterPath: true,
-                },
-              },
-            },
-          },
-        },
+        include: this.ROOM_INCLUDE,
       })
     } catch (error) {
       this.logger.error(
@@ -148,11 +125,11 @@ export class RoomRepository {
   }
 
   /**
-   * Найти комнату по invite code
-   * Используется при присоединении guest'а
+   * Find room by invite code
+   * Used when a guest is joining
    *
-   * @param inviteCode - 6-значный код (uppercase)
-   * @returns Комната или null
+   * @param inviteCode - 6-character code (uppercase)
+   * @returns Room or null
    */
   async findByInviteCode(
     inviteCode: string,
@@ -160,32 +137,7 @@ export class RoomRepository {
     try {
       return await this.prisma.room.findUnique({
         where: { inviteCode },
-        include: {
-          host: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          guest: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          match: {
-            include: {
-              media: {
-                select: {
-                  id: true,
-                  tmdbId: true,
-                  title: true,
-                  posterPath: true,
-                },
-              },
-            },
-          },
-        },
+        include: this.ROOM_INCLUDE,
       })
     } catch (error) {
       this.logger.error(`Failed to find room by inviteCode: ${error.message}`)
@@ -193,11 +145,11 @@ export class RoomRepository {
     }
   }
   /**
-   * Проверить существование invite code
-   * Для генерации уникальных кодов без коллизий
+   * Check if invite code exists
+   * For generating unique codes without collisions
    *
-   * @param inviteCode - Код для проверки
-   * @returns true если код уже используется
+   * @param inviteCode - Code to check
+   * @returns true if the code is already in use
    */
 
   async existsByInviteCode(inviteCode: string): Promise<boolean> {
@@ -215,14 +167,14 @@ export class RoomRepository {
   }
 
   /**
-   * Добавить guest к комнате
-   * Атомарная операция: guestId + status = SELECTING
+   * Add guest to room
+   * Atomic operation: guestId + status = SELECTING
    *
-   * @param roomId - ID комнаты
-   * @param guestId - ID присоединяющегося пользователя
-   * @returns Обновлённая комната
+   * @param roomId - Room ID
+   * @param guestId - ID of the joining user
+   * @returns Updated room
    *
-   * @throws PrismaClientKnownRequestError если комната не найдена
+   * @throws PrismaClientKnownRequestError if room is not found
    */
   async addGuest(roomId: string, guestId: string): Promise<RoomWithRelations> {
     this.logger.debug(`Adding guest to room: ${roomId}`)
@@ -233,32 +185,7 @@ export class RoomRepository {
           guestId,
           status: RoomStatus.SELECTING,
         },
-        include: {
-          host: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          guest: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          match: {
-            include: {
-              media: {
-                select: {
-                  id: true,
-                  tmdbId: true,
-                  title: true,
-                  posterPath: true,
-                },
-              },
-            },
-          },
-        },
+        include: this.ROOM_INCLUDE,
       })
     } catch (error) {
       this.logger.error(
@@ -270,15 +197,15 @@ export class RoomRepository {
   }
 
   /**
-   * Обновить статус комнаты
+   * Update room status
    *
-   * @param roomId - ID комнаты
-   * @param status - Новый статус
-   * @returns Обновлённая комната (без relations для производительности)
+   * @param roomId - Room ID
+   * @param status - New status
+   * @returns Updated room (without relations for performance)
    */
 
   async updateStatus(roomId: string, status: RoomStatus): Promise<Room> {
-    this.logger.debug(`Update room  ${roomId} status to: ${status}`)
+    this.logger.debug(`Update room ${roomId} status to: ${status}`)
     try {
       return await this.prisma.room.update({
         where: { id: roomId },
@@ -294,12 +221,12 @@ export class RoomRepository {
   }
 
   /**
-   * Создать match для комнаты
-   * Атомарная транзакция: Room.status + RoomMatch.create
+   * Create match for room
+   * Atomic transaction: Room.status + RoomMatch.create
    *
-   * @param roomId - ID комнаты
-   * @param mediaId - ID выбранного медиа
-   * @returns Комната с созданным match
+   * @param roomId - Room ID
+   * @param mediaId - ID of the selected media
+   * @returns Room with created match
    */
   async createMatch(
     roomId: string,
@@ -326,32 +253,7 @@ export class RoomRepository {
 
         return tx.room.findUniqueOrThrow({
           where: { id: roomId },
-          include: {
-            host: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            guest: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            match: {
-              include: {
-                media: {
-                  select: {
-                    id: true,
-                    tmdbId: true,
-                    title: true,
-                    posterPath: true,
-                  },
-                },
-              },
-            },
-          },
+          include: this.ROOM_INCLUDE,
         })
       })
     } catch (error) {
@@ -364,10 +266,10 @@ export class RoomRepository {
   }
 
   /**
-   * Удалить комнату (hard delete)
-   * Cascade удаляет связанные RoomMatch
+   * Delete room (hard delete)
+   * Cascade deletes related RoomMatch records
    *
-   * @param roomId - ID комнаты
+   * @param roomId - Room ID
    */
   async delete(roomId: string): Promise<void> {
     this.logger.debug(`Deleting room ${roomId}`)

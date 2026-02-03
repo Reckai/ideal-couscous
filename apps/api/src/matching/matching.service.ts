@@ -1,6 +1,7 @@
 import type { RoomState } from '../room/repositories'
 import type { MatchFoundDTO } from './dto/swipes.dto'
 import { Injectable } from '@nestjs/common'
+import { WsException } from '@nestjs/websockets'
 import { BaseRoomData, RoomData } from '@netflix-tinder/shared'
 import { RoomStatus } from 'generated/prisma'
 import { SwipeAction } from './dto/swipes.dto'
@@ -22,10 +23,19 @@ export class MatchingService {
 
   // Room Lifecycle
   async createRoom(userId: string): Promise<RoomData> {
+    if (!userId) {
+      throw new WsException('userId is required to create a room')
+    }
     return this.roomLifecycle.createRoom(userId)
   }
 
   async addUserToRoom(roomId: string, userId: string): Promise<RoomData> {
+    if (!roomId) {
+      throw new WsException('roomId is required')
+    }
+    if (!userId) {
+      throw new WsException('userId is required')
+    }
     return this.roomLifecycle.addUserToRoom(roomId, userId)
   }
 
@@ -51,11 +61,17 @@ export class MatchingService {
   }
 
   async startSelections(roomId: string, userId: string): Promise<RoomData> {
+    if (!roomId || !userId) {
+      throw new WsException('roomId and userId are required to start selections')
+    }
     await this.roomState.startSelections(roomId, userId)
     return this.roomSerializer.getSnapshotOfRoom(roomId, userId)
   }
 
-  async setUserRediness(roomId: string, userId: string, isReady: boolean): Promise<RoomStatus> {
+  async setUserReadiness(roomId: string, userId: string, isReady: boolean): Promise<RoomStatus> {
+    if (!roomId || !userId) {
+      throw new WsException('roomId and userId are required')
+    }
     return this.roomState.setUserReadiness(roomId, userId, isReady)
   }
 
@@ -65,10 +81,16 @@ export class MatchingService {
 
   // Selection
   async addMediaToDraft(userId: string, roomId: string, mediaId: string): Promise<boolean> {
+    if (!mediaId) {
+      throw new WsException('mediaId is required')
+    }
     return this.selection.addMediaToDraft(userId, roomId, mediaId)
   }
 
   async deleteMediaFromDraft(userId: string, roomId: string, mediaId: string): Promise<boolean> {
+    if (!mediaId) {
+      throw new WsException('mediaId is required')
+    }
     return this.selection.deleteMediaFromDraft(userId, roomId, mediaId)
   }
 
@@ -79,6 +101,12 @@ export class MatchingService {
     roomId: string,
     mediaId: string,
   ): Promise<{ isMatch: boolean, matchData?: MatchFoundDTO }> {
+    if (!mediaId) {
+      throw new WsException('mediaId is required')
+    }
+    if (!action || !Object.values(SwipeAction).includes(action)) {
+      throw new WsException('Valid swipe action (LIKE/SKIP) is required')
+    }
     return this.swipe.processSwipe(action, userId, roomId, mediaId)
   }
 

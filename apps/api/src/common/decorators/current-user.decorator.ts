@@ -3,17 +3,17 @@ import type { User } from 'generated/prisma'
 import { createParamDecorator } from '@nestjs/common'
 
 /**
- * CurrentUser - декоратор для извлечения текущего пользователя из request
+ * CurrentUser - decorator for extracting the current user from request
  *
- * Использование:
- * @CurrentUser() user: User - получить весь объект пользователя
- * @CurrentUser('id') userId: string - получить только ID
- * @CurrentUser('name') userName: string - получить только имя
+ * Usage:
+ * @CurrentUser() user: User - get the entire user object
+ * @CurrentUser('id') userId: string - get only the ID
+ * @CurrentUser('name') userName: string - get only the name
  *
- * Требования:
- * - Должен быть применен AnonymousUserGuard (или другой guard, устанавливающий request.user)
+ * Requirements:
+ * - AnonymousUserGuard (or another guard that sets request.user) must be applied
  *
- * Примеры:
+ * Examples:
  * ```typescript
  * @UseGuards(AnonymousUserGuard)
  * @Post()
@@ -33,12 +33,12 @@ export const CurrentUser = createParamDecorator(
       )
     }
 
-    // Если передано имя свойства, возвращаем только его
+    // If a property name is provided, return only that property
     if (property) {
       return user[property]
     }
 
-    // Иначе возвращаем весь объект пользователя
+    // Otherwise return the entire user object
     return user
   },
 )

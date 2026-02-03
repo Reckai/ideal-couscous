@@ -11,8 +11,8 @@ import { ConfigService } from '@nestjs/config'
 import Redis from 'ioredis'
 
 /**
- * Redis Service - обёртка над ioredis
- * Управляет connection lifecycle
+ * Redis Service - wrapper over ioredis
+ * Manages connection lifecycle
  */
 @Injectable()
 export class RedisService
@@ -22,16 +22,15 @@ export class RedisService
 
   constructor(private readonly configService: ConfigService) {
     const options: RedisOptions = {
-      host: configService.get<string>('REDIS_HOST', 'localhost'),
-      port: configService.get<number>('REDIS_PORT', 6379),
-      password: configService.get<string>('REDIS_PASSWORD'),
-      db: configService.get<number>('REDIS_DB', 0),
+      host: configService.get<string>('redis.host', 'localhost'),
+      port: configService.get<number>('redis.port', 6379),
+      password: configService.get<string>('redis.password'),
       retryStrategy: (times: number) => {
         return Math.min(times * 50, 2000)
       },
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
-      lazyConnect: true, // Подключаемся явно в onModuleInit
+      lazyConnect: true, // Connect explicitly in onModuleInit
     }
 
     super(options)
@@ -78,8 +77,8 @@ export class RedisService
   }
 
   /**
-   * Health check для Redis
-   * Используется в /health endpoint
+   * Health check for Redis
+   * Used in /health endpoint
    */
   async isHealthy(): Promise<boolean> {
     try {
@@ -92,7 +91,7 @@ export class RedisService
   }
 
   /**
-   * Получить информацию о Redis сервере
+   * Get Redis server information
    */
   async getInfo(): Promise<{
     version: string

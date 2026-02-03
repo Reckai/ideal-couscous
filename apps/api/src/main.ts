@@ -62,24 +62,24 @@ async function bootstrap() {
     const config = new DocumentBuilder()
       .setTitle('Anime Tinder API')
       .setDescription(
-        'REST API для Anime Tinder - приложения для совместного выбора аниме',
+        'REST API for Anime Tinder - a collaborative anime selection app',
       )
       .setVersion('1.0')
-      .addTag('rooms', 'Управление комнатами')
-      .addTag('media', 'Каталог медиа контента')
+      .addTag('rooms', 'Room management')
+      .addTag('media', 'Media content catalog')
       .addCookieAuth('anonymousUserId', {
         type: 'apiKey',
         in: 'cookie',
-        description: 'Cookie с ID анонимного пользователя',
+        description: 'Cookie with anonymous user ID',
       })
       .build()
 
     const document = SwaggerModule.createDocument(app, config)
     SwaggerModule.setup('api/docs', app, document, {
       swaggerOptions: {
-        persistAuthorization: true, // Сохранять авторизацию между перезагрузками
-        tagsSorter: 'alpha', // Сортировка тегов по алфавиту
-        operationsSorter: 'alpha', // Сортировка операций по алфавиту
+        persistAuthorization: true, // Persist authorization between reloads
+        tagsSorter: 'alpha', // Sort tags alphabetically
+        operationsSorter: 'alpha', // Sort operations alphabetically
       },
       customSiteTitle: 'Anime Tinder API Docs',
     })

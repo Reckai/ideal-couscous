@@ -3,11 +3,12 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { RoomStatus } from 'generated/prisma'
+import { REDIS_KEYS } from '../../common/redis-keys'
 import { User } from '../../matching/types/user'
 import { RedisService } from '../../redis/redis.service'
 
 /**
- * Структура состояния комнаты в Redis
+ * Room state structure in Redis
  */
 export interface RoomState {
   status: RoomStatus
@@ -17,24 +18,14 @@ export interface RoomState {
 }
 
 /**
- * Repository для работы с Room data в Redis
+ * Repository for working with Room data in Redis
  */
 @Injectable()
 export class RoomCacheRepository {
   private readonly logger = new Logger(RoomCacheRepository.name)
   private readonly ROOM_TTL: number
 
-  // Redis key patterns
-  private readonly KEYS = {
-    roomState: (roomId: string) => `room:${roomId}:state`,
-    roomDraft: (roomId: string) => `room:${roomId}:draft`,
-    userSelections: (roomId: string, userId: string) => `room:${roomId}:user:${userId}:selections`,
-    mediaPool: (roomId: string) => `room:${roomId}:media_pool`,
-    swipes: (roomId: string) => `room:${roomId}:swipes`,
-    users: (roomId: string) => `room:${roomId}:users`,
-    userInRoom: (userId: string) => `user:${userId}:room`,
-    userStatus: (roomId: string, userId: string) => `room:${roomId}:user:${userId}:status`,
-  }
+  private readonly KEYS = REDIS_KEYS
 
   constructor(
     private readonly redis: RedisService,
@@ -78,7 +69,7 @@ export class RoomCacheRepository {
     return this.redis.hlen(key)
   }
 
-  async getNameOfUserInRoom(roomId: string, userId: string): Promise<string> {
+  async getNameOfUserInRoom(roomId: string, userId: string): Promise<string | null> {
     const key = this.KEYS.users(roomId)
     const result = await this.redis.hget(key, userId)
     if (!result) {
@@ -106,24 +97,24 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Получить состояние комнаты
+   * Get room state
    *
-   * @param roomId - ID комнаты
-   * @returns Состояние или null если не найдено
+   * @param roomId - Room ID
+   * @returns State or null if not found
    */
   async getRoomState(roomId: string): Promise<RoomState | null> {
     const key = this.KEYS.roomState(roomId)
 
     try {
-      // ✅ Добавляем await!
+      // Await the Redis call
       const data = await this.redis.hgetall(key)
 
-      // Проверка на пустой объект
+      // Check for empty object
       if (!data || Object.keys(data).length === 0) {
         return null
       }
 
-      // Парсинг строк в нужные типы
+      // Parse strings to appropriate types
       return {
         status: data.status as RoomStatus,
         hostReady: data.hostReady === 'true',
@@ -147,7 +138,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Обновить статус комнаты
+   * Update room status
    */
   async updateRoomStatus(roomId: string, status: RoomStatus): Promise<void> {
     const key = this.KEYS.roomState(roomId)
@@ -166,7 +157,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Установить готовность пользователя
+   * Set user readiness
    */
   async setUserReadiness(
     roomId: string,
@@ -189,7 +180,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Проверить готовы ли оба участника
+   * Check if both participants are ready
    */
   async areBothReady(roomId: string): Promise<boolean> {
     const state = await this.getRoomState(roomId)
@@ -212,7 +203,7 @@ export class RoomCacheRepository {
   // ============================================================================
 
   /**
-   * Сохранить выбор пользователя
+   * Save user selection
    */
   async saveUserSelection(roomId: string, userId: string, mediaId: string): Promise<number> {
     const key = this.KEYS.userSelections(roomId, userId)
@@ -222,7 +213,7 @@ export class RoomCacheRepository {
     if (count > 50) {
       throw new Error('Draft limit reached')
     }
-    // SADD автоматически убирает дубликаты
+    // SADD automatically removes duplicates
     const result = await this.redis.sadd(key, mediaId)
 
     await this.redis.expire(key, this.ROOM_TTL)
@@ -230,7 +221,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Удалить выбор пользователя
+   * Remove user selection
    */
   async removeUserSelection(roomId: string, userId: string, mediaId: string): Promise<number> {
     const key = this.KEYS.userSelections(roomId, userId)
@@ -238,7 +229,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Получить выборы конкретного пользователя
+   * Get selections of a specific user
    */
   async getUserSelections(roomId: string, userId: string): Promise<string[]> {
     const key = this.KEYS.userSelections(roomId, userId)
@@ -267,10 +258,10 @@ export class RoomCacheRepository {
         return
       }
 
-      // Очищаем старый pool
+      // Clear old pool
       await this.redis.del(key)
 
-      // RPUSH добавляет в конец списка
+      // RPUSH appends to the end of the list
       await this.redis.rpush(key, ...mediaIds)
       await this.redis.expire(key, this.ROOM_TTL)
     } catch (error) {
@@ -283,13 +274,13 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Получить media pool
+   * Get media pool
    */
   async getMediaPool(roomId: string): Promise<string[]> {
     const key = this.KEYS.mediaPool(roomId)
 
     try {
-      return await this.redis.lrange(key, 0, -1) // Все элементы
+      return await this.redis.lrange(key, 0, -1) // All elements
     } catch (error) {
       this.logger.error(
         `Failed to get media pool: ${error.message}`,
@@ -326,7 +317,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Получить размер media pool
+   * Get media pool size
    */
   async getMediaPoolSize(roomId: string): Promise<number> {
     const key = this.KEYS.mediaPool(roomId)
@@ -347,13 +338,13 @@ export class RoomCacheRepository {
   // ============================================================================
 
   /**
-   * Удалить все данные комнаты
+   * Delete all room data
    */
   async deleteRoomData(roomId: string, userId: string): Promise<void> {
     this.logger.debug(`Deleting all Redis data for room ${roomId}`)
 
     try {
-      // Сначала получаем всех пользователей, чтобы удалить их selections
+      // First get all users to delete their selections
       const users = await this.getUsersInRoom(roomId)
       const userSelectionKeys = users.map((user) =>
         this.KEYS.userSelections(roomId, user.userId),
@@ -385,7 +376,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Получить объединённый draft всех пользователей комнаты
+   * Get the combined draft of all room users
    */
   async getRoomDraft(roomId: string, userId: string): Promise<string[]> {
     try {
@@ -401,7 +392,7 @@ export class RoomCacheRepository {
   }
 
   /**
-   * Продлить TTL всех ключей комнаты
+   * Extend TTL for all room keys
    */
   async refreshRoomTTL(roomId: string): Promise<void> {
     try {
@@ -426,12 +417,12 @@ export class RoomCacheRepository {
         `Failed to refresh room TTL: ${error.message}`,
         error.stack,
       )
-      // Не бросаем ошибку - это не критично
+      // Don't throw the error - this is not critical
     }
   }
 
   /**
-   * Проверить существует ли комната
+   * Check if room exists
    */
   async roomExists(roomId: string): Promise<boolean> {
     const key = this.KEYS.roomState(roomId)

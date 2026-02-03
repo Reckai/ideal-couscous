@@ -5,12 +5,12 @@ import { Prisma, RoomStatus } from 'generated/prisma'
 import { PrismaService } from '../../Prisma/prisma.service'
 import { RoomRepository } from './room.repository'
 
-// Мок PrismaService
+// Mock PrismaService
 const mockPrismaService = {
   room: {
     create: jest.fn(),
     findUnique: jest.fn(),
-    // ... здесь можно добавить моки для других методов по мере необходимости
+    // ... add mocks for other methods as needed
   },
 }
 
@@ -32,7 +32,7 @@ describe('roomRepository', () => {
     repository = module.get<RoomRepository>(RoomRepository)
     prisma = module.get<PrismaService>(PrismaService)
 
-    // Очищаем моки перед каждым тестом
+    // Clear mocks before each test
     jest.clearAllMocks()
   })
 
@@ -41,11 +41,11 @@ describe('roomRepository', () => {
   })
 
   // ============================================================================
-  // ТЕСТ ДЛЯ МЕТОДА create
+  // TEST FOR create METHOD
   // ============================================================================
   describe('create', () => {
     it('should create a new room with correct data', async () => {
-      // 1. Подготовка данных
+      // 1. Prepare data
       const hostId = randomUUID()
       const inviteCode = 'ABCDEF'
       const expiresAt = new Date()
@@ -64,27 +64,25 @@ describe('roomRepository', () => {
         guest: null,
       }
 
-      // 2. Настройка мока
-      // Говорим, что при вызове prisma.room.create должен вернуться наш mockRoom
+      // 2. Configure mock
       mockPrismaService.room.create.mockResolvedValue(mockRoom)
 
-      // 3. Вызов тестируемого метода
+      // 3. Call the method under test
       const result = await repository.create(hostId, inviteCode, expiresAt)
 
-      // 4. Проверка результатов (Asserts)
-      // Проверяем, что метод prisma.room.create был вызван один раз
+      // 4. Assertions
       expect(prisma.room.create).toHaveBeenCalledTimes(1)
 
-      // Проверяем, что метод prisma.room.create был вызван с правильными аргументами
+      // Verify prisma.room.create was called with correct arguments
       expect(prisma.room.create).toHaveBeenCalledWith({
         data: {
           hostId,
           inviteCode,
           expiresAt,
-          preferences: Prisma.JsonNull, // Prisma.JsonNull заменяется на null в моке
+          preferences: Prisma.JsonNull,
           status: RoomStatus.WAITING,
         },
-        // Проверяем, что include параметры тоже переданы верно
+        // Verify include parameters are also correct
         include: {
           host: { select: { id: true, name: true } },
           guest: { select: { id: true, name: true } },
@@ -103,14 +101,14 @@ describe('roomRepository', () => {
         },
       })
 
-      // Проверяем, что метод вернул тот результат, который мы ожидали
+      // Verify the method returned the expected result
       expect(result).toEqual(mockRoom)
     })
   })
 
   describe('find by id', () => {
     it('should find a room with correct data', async () => {
-      // 1. Подготовка данных
+      // 1. Prepare data
       const hostId = randomUUID()
       const inviteCode = 'ABCDEF'
       const expiresAt = new Date()
@@ -130,20 +128,19 @@ describe('roomRepository', () => {
         guest: null,
       }
 
-      // 2. Настройка мока
-      // Говорим, что при вызове prisma.room.findUnique должен вернуться наш mockRoom
+      // 2. Configure mock
       mockPrismaService.room.findUnique.mockResolvedValue(mockRoom)
 
-      // 3. Вызов тестируемого метода
+      // 3. Call the method under test
       const result = await repository.findById(id)
 
-      // 4. Проверки
+      // 4. Assertions
       expect(prisma.room.findUnique).toHaveBeenCalledTimes(1)
 
-      // Проверяем, что метод prisma.room.create был вызван с правильными аргументами
+      // Verify prisma.room.findUnique was called with correct arguments
       expect(prisma.room.findUnique).toHaveBeenCalledWith({
         where: { id },
-        // Проверяем, что include параметры тоже переданы верно
+        // Verify include parameters are also correct
         include: {
           host: { select: { id: true, name: true } },
           guest: { select: { id: true, name: true } },
@@ -162,13 +159,13 @@ describe('roomRepository', () => {
         },
       })
 
-      // Проверяем, что метод вернул тот результат, который мы ожидали
+      // Verify the method returned the expected result
       expect(result).toEqual(mockRoom)
     })
   })
   describe('find by Invite code', () => {
     it('should find a room with correct data with invite code', async () => {
-      // 1. Подготовка данных
+      // 1. Prepare data
       const hostId = randomUUID()
       const inviteCode = 'ABCDEF'
       const expiresAt = new Date()
@@ -192,13 +189,13 @@ describe('roomRepository', () => {
 
       const result = await repository.findByInviteCode(inviteCode)
 
-      // 4. Проверки
+      // 4. Assertions
       expect(prisma.room.findUnique).toHaveBeenCalledTimes(1)
 
-      // Проверяем, что метод prisma.room.create был вызван с правильными аргументами
+      // Verify prisma.room.findUnique was called with correct arguments
       expect(prisma.room.findUnique).toHaveBeenCalledWith({
         where: { inviteCode },
-        // Проверяем, что include параметры тоже переданы верно
+        // Verify include parameters are also correct
         include: {
           host: { select: { id: true, name: true } },
           guest: { select: { id: true, name: true } },
@@ -217,7 +214,7 @@ describe('roomRepository', () => {
         },
       })
 
-      // Проверяем, что метод вернул тот результат, который мы ожидали
+      // Verify the method returned the expected result
       expect(result).toEqual(mockRoom)
     })
   })

@@ -1,10 +1,9 @@
 import {
-  BadRequestException,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common'
-import { BaseRoomData, RoomData, RoomStatus as SharedRoomStatus } from '@netflix-tinder/shared'
+import { WsException } from '@nestjs/websockets'
+import { RoomData } from '@netflix-tinder/shared'
 import { customAlphabet } from 'nanoid'
 import { RoomCacheRepository } from '../../room/repositories'
 
@@ -66,21 +65,21 @@ export class RoomLifecycleService {
   async addUserToRoom(roomId: string, userId: string): Promise<RoomData> {
     const roomExist = await this.roomCache.validateRoomExistence(roomId)
     if (!roomExist) {
-      throw new NotFoundException(`Room with id ${roomId} not found`)
+      throw new WsException(`Room with id ${roomId} not found`)
     }
 
     const status = await this.roomCache.getRoomStatus(roomId)
     if (status !== 'WAITING') {
-      throw new BadRequestException('Room has non waiting status')
+      throw new WsException('Room has non waiting status')
     }
 
     const userCount = await this.roomCache.getRoomUserCount(roomId)
     if (userCount >= 2) {
-      throw new BadRequestException('Room is full')
+      throw new WsException('Room is full')
     }
 
     const userNameOfUserInRoom = await this.roomCache.getNameOfUserInRoom(roomId, userId)
-    const nickName = this.compareAndRecreateNickName(userNameOfUserInRoom, this.createNickName())
+    const nickName = this.createUniqueNickName(userNameOfUserInRoom)
 
     await this.roomCache.addUserToRoom(roomId, userId, nickName)
     const users = await this.roomCache.getUsersInRoom(roomId)
@@ -106,32 +105,20 @@ export class RoomLifecycleService {
     await this.roomCache.deleteRoomData(roomId, userId)
   }
 
-  async getRoomData(roomId: string): Promise<BaseRoomData> {
-    const users = await this.roomCache.getUsersInRoom(roomId)
-    const hostId = await this.roomCache.getHostId(roomId)
-    const status = await this.roomCache.getRoomStatus(roomId)
-
-    return {
-      users: users.map((user) => ({
-        ...user,
-        isHost: user.userId === hostId,
-      })),
-      usersCount: users.length,
-      inviteCode: roomId,
-      status: status as SharedRoomStatus,
-    }
-  }
-
   private createNickName(): string {
     const randomAnimal = this.animals[Math.floor(Math.random() * this.animals.length)]
     return `guest_${randomAnimal}`
   }
 
-  private compareAndRecreateNickName(nickNameInRoom: string, nickName: string): string {
-    if (nickNameInRoom !== nickName) {
-      return nickName
+  private createUniqueNickName(existingNickName: string | null): string {
+    const maxAttempts = 20
+    for (let i = 0; i < maxAttempts; i++) {
+      const candidate = this.createNickName()
+      if (candidate !== existingNickName) {
+        return candidate
+      }
     }
-    const newNickName = this.createNickName()
-    return this.compareAndRecreateNickName(nickNameInRoom, newNickName)
+    // Fallback: append random suffix to guarantee uniqueness
+    return `${this.createNickName()}_${Math.random().toString(36).substring(2, 5)}`
   }
 }

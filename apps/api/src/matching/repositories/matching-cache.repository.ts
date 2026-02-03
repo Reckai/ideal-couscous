@@ -1,16 +1,14 @@
 import type { SwipeAction } from '../dto/swipes.dto'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { REDIS_KEYS } from '../../common/redis-keys'
 import { RedisService } from '../../redis/redis.service'
 
 @Injectable()
 export class MatchingCacheRepository {
   private readonly logger = new Logger(MatchingCacheRepository.name)
   private readonly ROOM_TTL: number
-  private readonly KEYS = {
-    roomState: (roomId: string) => `room:${roomId}:state`,
-    swipes: (roomId: string) => `room:${roomId}:swipes`,
-  }
+  private readonly KEYS = REDIS_KEYS
 
   constructor(
     private readonly redis: RedisService,
@@ -20,7 +18,7 @@ export class MatchingCacheRepository {
   }
 
   /**
-   * Сохранить свайп пользователя
+   * Save user swipe
    */
   async saveSwipe(
     roomId: string,
@@ -41,7 +39,7 @@ export class MatchingCacheRepository {
   }
 
   /**
-   * Получить свайп пользователя на конкретный медиа
+   * Get user swipe for a specific media
    */
   async getSwipe(
     roomId: string,
@@ -61,7 +59,7 @@ export class MatchingCacheRepository {
   }
 
   /**
-   * Получить все свайпы для конкретного медиа
+   * Get all swipes for a specific media
    */
   async getSwipesForMedia(
     roomId: string,
@@ -94,7 +92,7 @@ export class MatchingCacheRepository {
   }
 
   /**
-   * Получить все свайпы комнаты
+   * Get all room swipes
    */
   async getAllSwipes(roomId: string): Promise<Record<string, string>> {
     const key = this.KEYS.swipes(roomId)
@@ -111,7 +109,7 @@ export class MatchingCacheRepository {
   }
 
   /**
-   * Получить количество свайпов пользователя
+   * Get user swipe count
    */
   async getUserSwipeCount(roomId: string, userId: string): Promise<number> {
     const allSwipes = await this.getAllSwipes(roomId)
