@@ -25,5 +25,11 @@ export default () => {
     room: {
       ttlMinutes: env.ROOM_TTL_MINUTES,
     },
+
+    tmdb: {
+      apiKey: env.TMDB_API_KEY,
+    },
+
+    frontendUrl: env.FRONTEND_URL,
   }
 }

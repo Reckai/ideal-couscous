@@ -54,6 +54,12 @@ export const environmentSchema = z.object({
     .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().int().positive())
     .default(30),
+
+  // TMDB
+  TMDB_API_KEY: z.string().min(1, 'TMDB_API_KEY is required'),
+
+  // Frontend
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 })
 
 /**

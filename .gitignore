@@ -94,3 +94,5 @@ packages/shared/src/**/*.d.ts
 
 # Mac OS
 .DS_Store
+
+.claude

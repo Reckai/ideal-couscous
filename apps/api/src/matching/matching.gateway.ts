@@ -12,7 +12,7 @@ import type {
   SocketData,
 } from '@netflix-tinder/shared'
 import type { Server, Socket } from 'socket.io'
-import { Logger } from '@nestjs/common'
+import { Logger, UseFilters, UseInterceptors } from '@nestjs/common'
 import {
   ConnectedSocket,
   MessageBody,
@@ -21,6 +21,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { parse as parseCookies } from 'cookie'
+import { WsExceptionFilter } from 'src/core/filters/ws-exception.filter'
+import { LoggingInterceptor } from 'src/core/interceptors/logging.interceptor'
 import { DisconnectTimerService } from 'src/room/services/disconnectTime.service'
 import { v4 as uuidv4 } from 'uuid'
 import { SwipeAction } from './dto/swipes.dto'
@@ -29,6 +31,8 @@ import { MatchingService } from './matching.service'
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 
+@UseFilters(new WsExceptionFilter())
+@UseInterceptors(LoggingInterceptor)
 @WebSocketGateway({
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -74,7 +78,6 @@ implements OnGatewayConnection, OnGatewayDisconnect {
           const roomId = await this.matchingService.getUserRoomId(userId)
           await client.join(roomId)
           client.data.roomId = roomId
-          console.log(roomId)
           const roomData = await this.matchingService.getSnapshotOfRoom(roomId, userId)
           client.emit('sync_state', roomData)
         } else {
@@ -128,7 +131,6 @@ implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.roomId = roomResponse.inviteCode
 
       this.logger.log(`User ${userId} created room ${roomResponse.inviteCode}`)
-      console.log(roomResponse)
       return {
         success: true,
         data: roomResponse,

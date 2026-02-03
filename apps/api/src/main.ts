@@ -1,11 +1,14 @@
 import { Logger, ValidationPipe } from '@nestjs/common'
-
-import { NestFactory } from '@nestjs/core'
+import { ConfigService } from '@nestjs/config'
+import { HttpAdapterHost, NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import * as cookieParser from 'cookie-parser'
 import { config } from 'dotenv'
 import { AppModule } from './app.module'
 import { RedisIoAdapter } from './common/adapters/redis.adapter'
+import { HttpExceptionFilter } from './core/filters/http-exception.filter'
+import { LoggingInterceptor } from './core/interceptors/logging.interceptor'
+import { TransformInterceptor } from './core/interceptors/transform.interceptor'
 
 config()
 
@@ -29,6 +32,11 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api')
 
+  // Global filters and interceptors
+  const httpAdapterHost = app.get(HttpAdapterHost)
+  app.useGlobalFilters(new HttpExceptionFilter(httpAdapterHost))
+  app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor())
+
   // Validation
   app.useGlobalPipes(
     new ValidationPipe({
@@ -39,15 +47,18 @@ async function bootstrap() {
   )
 
   // CORS (allow credentials for cookies)
+  const configService = app.get(ConfigService)
+  const frontendUrl = configService.get<string>('frontendUrl')
+  const port = configService.get<number>('port')
+  const nodeEnv = configService.get<string>('nodeEnv')
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: frontendUrl,
     credentials: true,
   })
 
-  const port = process.env.PORT || 4000
-
   // Swagger API Documentation (only in development)
-  if (process.env.NODE_ENV !== 'production') {
+  if (nodeEnv !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Anime Tinder API')
       .setDescription(

@@ -1,3 +1,5 @@
+import type { INestApplication } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { IoAdapter } from '@nestjs/platform-socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
 import Redis from 'ioredis'
@@ -5,10 +7,17 @@ import { ServerOptions } from 'socket.io'
 
 export class RedisIoAdapter extends IoAdapter {
   private adapterConstructor: ReturnType<typeof createAdapter>
+  private readonly configService: ConfigService
+
+  constructor(app: INestApplication) {
+    super(app)
+    this.configService = app.get(ConfigService)
+  }
+
   async connectToRedis(): Promise<void> {
-    const host = process.env.REDIS_HOST || 'localhost'
-    const port = Number.parseInt(process.env.REDIS_PORT || '6379', 10)
-    const password = process.env.REDIS_PASSWORD
+    const host = this.configService.get<string>('redis.host', 'localhost')
+    const port = this.configService.get<number>('redis.port', 6379)
+    const password = this.configService.get<string>('redis.password')
 
     const pubClient = new Redis({
       host,

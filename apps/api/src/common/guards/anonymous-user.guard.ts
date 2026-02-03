@@ -38,6 +38,11 @@ export class AnonymousUserGuard implements CanActivate {
   constructor(private readonly userService: UserService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Only apply to HTTP requests (skip WebSocket)
+    if (context.getType() !== 'http') {
+      return true
+    }
+
     const request = context.switchToHttp().getRequest<Request>()
     const response = context.switchToHttp().getResponse<Response>()
 

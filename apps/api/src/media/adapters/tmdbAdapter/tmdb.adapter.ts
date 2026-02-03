@@ -1,5 +1,6 @@
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 import { MediaEntityDTO } from 'src/media/dto/media.dto'
 
@@ -14,8 +15,15 @@ interface TmdbRawResponse {
 export class TmdbAdapter {
   private readonly logger = new Logger(TmdbAdapter.name)
   private readonly TMDB_API = 'https://api.themoviedb.org/3'
-  private readonly API_KEY = process.env.TMDB_API_KEY
-  constructor(private readonly httpService: HttpService) {}
+  private readonly API_KEY: string
+
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.API_KEY = this.configService.get<string>('tmdb.apiKey')
+  }
+
   async fetchAndAdaptPage(page: number): Promise<MediaEntityDTO[]> {
     try {
       const url = `${this.TMDB_API}/discover/movie?api_key=${this.API_KEY}&sort_by=popularity.desc&language=ru-RU&page=${page}`

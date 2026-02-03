@@ -3,55 +3,6 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator'
 
-export class MediaResponseDTO {
-  @ApiProperty({ description: 'uuid-here' })
-  mediaId: string
-
-  @ApiProperty({
-    description: 'relation path to media',
-    example: 'nrM2xFUfKJJEmZzd5d7kohT2G0C.jpg',
-  })
-  posterPath: string
-
-  @ApiProperty({ description: 'title of media' })
-  title: string
-
-  @ApiProperty({ description: 'link  to tmdb where user can find more info' })
-  tmdbLink: string
-}
-
-export class CreateMediaDTO {
-  @ApiProperty({
-    description: 'relation path to media',
-    example: 'nrM2xFUfKJJEmZzd5d7kohT2G0C.jpg',
-  })
-  @IsString()
-  posterPath: string
-
-  @ApiProperty({
-    description: 'Name of media',
-    example: 'Attack on titan',
-  })
-  @IsString()
-  title: string
-
-  @ApiProperty({
-    description: 'Name of media',
-    example: 'Attack on titan',
-  })
-  @IsString()
-  @IsOptional()
-  tmdbId: string | null
-
-  @ApiProperty({
-    description: 'Link to medio on tmdb',
-    example: 'https://www.themoviedb.org/tv/225171-pluribus',
-  })
-  @IsString()
-  @IsOptional()
-  TMDBLink: string
-}
-
 export class GetAnimeBatchDto {
   @IsArray()
   @ArrayNotEmpty()
@@ -60,20 +11,23 @@ export class GetAnimeBatchDto {
 }
 
 export class MediaQueryDto {
+  @ApiProperty({ description: 'Number of items per page', required: false, default: 20 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)
   @Type(() => Number)
-  limit?: number = 20 // Default: 20
+  limit?: number = 20
 
+  @ApiProperty({ description: 'Base64-encoded cursor for pagination', required: false })
   @IsOptional()
   @IsString()
-  cursor?: string // Base64-encoded cursor
+  cursor?: string
 
+  @ApiProperty({ description: 'Search by title', required: false })
   @IsOptional()
   @IsString()
-  search?: string // Поиск по названию
+  search?: string
 }
 
 export class MediaDto {
@@ -96,18 +50,12 @@ export class MediaDto {
   }
 }
 
-/**
- * Пагинация для cursor-based
- */
 export class CursorPaginationDto {
   nextCursor: string | null
   hasMore: boolean
   count: number
 }
 
-/**
- * Ответ с пагинацией
- */
 export class MediaListResponseDto {
   data: MediaDto[]
   pagination: CursorPaginationDto

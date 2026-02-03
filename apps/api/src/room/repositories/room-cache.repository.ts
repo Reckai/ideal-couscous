@@ -1,6 +1,7 @@
 // apps/api/src/modules/room/repositories/room-cache.repository.ts
 
 import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { RoomStatus } from 'generated/prisma'
 import { User } from '../../matching/types/user'
 import { RedisService } from '../../redis/redis.service'
@@ -21,7 +22,7 @@ export interface RoomState {
 @Injectable()
 export class RoomCacheRepository {
   private readonly logger = new Logger(RoomCacheRepository.name)
-  private readonly ROOM_TTL = 30 * 60 // 30 минут в секундах
+  private readonly ROOM_TTL: number
 
   // Redis key patterns
   private readonly KEYS = {
@@ -35,15 +36,13 @@ export class RoomCacheRepository {
     userStatus: (roomId: string, userId: string) => `room:${roomId}:user:${userId}:status`,
   }
 
-  constructor(private readonly redis: RedisService) { }
+  constructor(
+    private readonly redis: RedisService,
+    private readonly configService: ConfigService,
+  ) {
+    this.ROOM_TTL = this.configService.get<number>('room.ttlMinutes') * 60
+  }
 
-  // ============================================================================
-  // ROOM STATE OPERATIONS
-  // ============================================================================
-
-  /**
-   * Инициализировать состояние комнаты
-   */
   async initRoom(roomId: string, hostId: string, nickName: string): Promise<void> {
     const key = this.KEYS.roomState(roomId)
     this.logger.debug(`Initializing room state: ${roomId}`)
@@ -255,48 +254,7 @@ export class RoomCacheRepository {
       return JSON.parse(jsonString)
     }) as User[]
   }
-  /**
-   * Получить выборы пользователя
-   */
-  // async getUserSelections(roomId: string, userId: string): Promise<string[]> {
-  //   const key = this.KEYS.userSelections(roomId, userId);
-  //
-  //   try {
-  //     return await this.redis.smembers(key);
-  //   } catch (error) {
-  //     this.logger.error(
-  //       `Failed to get user selections: ${error.message}`,
-  //       error.stack,
-  //     );
-  //     throw error;
-  //   }
-  // }
 
-  /**
-   * Проверить сохранил ли пользователь выборы
-   */
-  // async hasUserSelections(roomId: string, userId: string): Promise<boolean> {
-  //   const key = this.KEYS.userSelections(roomId, userId);
-  //
-  //   try {
-  //     const count = await this.redis.scard(key);
-  //     return count > 0;
-  //   } catch (error) {
-  //     this.logger.error(
-  //       `Failed to check user selections: ${error.message}`,
-  //       error.stack,
-  //     );
-  //     throw error;
-  //   }
-  // }
-
-  // ============================================================================
-  // MEDIA POOL OPERATIONS
-  // ============================================================================
-
-  /**
-   * Создать media pool для свайпинга
-   */
   async createMediaPool(roomId: string, mediaIds: string[]): Promise<void> {
     const key = this.KEYS.mediaPool(roomId)
     this.logger.debug(

@@ -1,17 +1,23 @@
 import type { SwipeAction } from '../dto/swipes.dto'
 import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { RedisService } from '../../redis/redis.service'
 
 @Injectable()
 export class MatchingCacheRepository {
   private readonly logger = new Logger(MatchingCacheRepository.name)
-  private readonly ROOM_TTL = 30 * 60 // 30 минут в секундах
+  private readonly ROOM_TTL: number
   private readonly KEYS = {
     roomState: (roomId: string) => `room:${roomId}:state`,
     swipes: (roomId: string) => `room:${roomId}:swipes`,
   }
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    private readonly configService: ConfigService,
+  ) {
+    this.ROOM_TTL = this.configService.get<number>('room.ttlMinutes') * 60
+  }
 
   /**
    * Сохранить свайп пользователя

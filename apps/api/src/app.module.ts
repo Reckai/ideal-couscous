@@ -1,11 +1,12 @@
 import { BullModule } from '@nestjs/bullmq'
-// app.module.ts
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
 import { ScheduleModule } from '@nestjs/schedule'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { AnonymousUserGuard } from './common/guards/anonymous-user.guard'
 import configuration from './config/configutation'
 import { MatchingModule } from './matching/matching.module'
 import { MediaModule } from './media/media.module'
@@ -25,9 +26,9 @@ import { UserModule } from './user'
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         connection: {
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-          password: configService.get('REDIS_PASSWORD'),
+          host: configService.get<string>('redis.host', 'localhost'),
+          port: configService.get<number>('redis.port', 6379),
+          password: configService.get<string>('redis.password'),
         },
       }),
       inject: [ConfigService],
@@ -41,6 +42,12 @@ import { UserModule } from './user'
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AnonymousUserGuard,
+    },
+  ],
 })
 export class AppModule {}
