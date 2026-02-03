@@ -31,7 +31,7 @@ export const SwipingPage = reatomComponent(() => {
       wrap(swipeAction('SKIP'))
     }
   }, [])
-
+  console.log(visibleCards)
   return (
     <div className="h-dvh w-full flex flex-col overflow-hidden bg-background">
       {/* Header */}
