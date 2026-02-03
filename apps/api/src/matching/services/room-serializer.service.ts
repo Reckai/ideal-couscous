@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { BaseRoomData, RoomData, RoomStatus as SharedRoomStatus } from '@netflix-tinder/shared'
 import { AbstractMediaRepository } from '../../media/interfaces'
-import { PrismaService } from '../../Prisma/prisma.service'
 import { AbstractRoomCacheRepository } from '../../room/interfaces'
 import { AbstractRoomSerializerService } from '../interfaces'
 
@@ -11,7 +10,6 @@ export class RoomSerializerService extends AbstractRoomSerializerService {
 
   constructor(
     private readonly roomCache: AbstractRoomCacheRepository,
-    private readonly prisma: PrismaService,
     private readonly mediaRepository: AbstractMediaRepository,
   ) {
     super()
@@ -61,14 +59,11 @@ export class RoomSerializerService extends AbstractRoomSerializerService {
         }
       }
       case 'MATCHED': {
-        const match = await this.prisma.roomMatch.findUnique({
-          where: { roomId },
-          select: { id: true },
-        })
+        const matchedMediaId = await this.roomCache.getMatchedMediaId(roomId)
         return {
           ...basicData,
           status: 'MATCHED',
-          matchId: match?.id ?? null,
+          matchId: matchedMediaId ?? '',
         }
       }
       default:

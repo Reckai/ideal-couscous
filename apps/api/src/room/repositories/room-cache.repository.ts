@@ -424,6 +424,23 @@ export class RoomCacheRepository extends AbstractRoomCacheRepository {
   }
 
   /**
+   * Save matched mediaId in the room state hash
+   */
+  async saveMatch(roomId: string, mediaId: string): Promise<void> {
+    const key = this.KEYS.roomState(roomId)
+    await this.redis.hset(key, 'matchedMediaId', mediaId)
+    await this.redis.expire(key, this.ROOM_TTL)
+  }
+
+  /**
+   * Get matched mediaId from the room state hash
+   */
+  async getMatchedMediaId(roomId: string): Promise<string | null> {
+    const key = this.KEYS.roomState(roomId)
+    return this.redis.hget(key, 'matchedMediaId')
+  }
+
+  /**
    * Check if room exists
    */
   async roomExists(roomId: string): Promise<boolean> {

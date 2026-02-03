@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
 import { RoomStatus } from 'generated/prisma'
-import { AbstractDisconnectTimerService, AbstractRoomCacheRepository, AbstractRoomRepository } from '../../room/interfaces'
+import { AbstractDisconnectTimerService, AbstractRoomCacheRepository } from '../../room/interfaces'
 import { AbstractRoomStateService } from '../interfaces'
 
 @Injectable()
@@ -14,7 +14,6 @@ export class RoomStateService extends AbstractRoomStateService {
 
   constructor(
     private readonly roomCache: AbstractRoomCacheRepository,
-    private readonly roomRepo: AbstractRoomRepository,
     private readonly disconnectTimerService: AbstractDisconnectTimerService,
   ) {
     super()
@@ -102,7 +101,6 @@ export class RoomStateService extends AbstractRoomStateService {
 
   async handleUserDisconnect(roomId: string, userId: string): Promise<void> {
     this.logger.log(`User ${userId} disconnected from room ${roomId}`)
-    await this.roomRepo.updateStatus(roomId, RoomStatus.CANCELLED)
     await this.roomCache.updateRoomStatus(roomId, RoomStatus.CANCELLED)
   }
 

@@ -19,7 +19,7 @@ const initMatchedAction = action(async () => {
   isLoadingAtom.set(true)
 
   const response = await api.get(`/media/${roomData.matchId}`)
-  matchedMediaDataAtom.set(response.data)
+  matchedMediaDataAtom.set(response.data.data)
   isLoadingAtom.set(false)
 }, 'initMatchedAction').extend(withAsync())
 

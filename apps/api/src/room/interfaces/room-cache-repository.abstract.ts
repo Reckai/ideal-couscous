@@ -32,4 +32,6 @@ export abstract class AbstractRoomCacheRepository {
   abstract getRoomDraft(roomId: string, userId: string): Promise<string[]>
   abstract refreshRoomTTL(roomId: string): Promise<void>
   abstract roomExists(roomId: string): Promise<boolean>
+  abstract saveMatch(roomId: string, mediaId: string): Promise<void>
+  abstract getMatchedMediaId(roomId: string): Promise<string | null>
 }

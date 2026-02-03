@@ -23,8 +23,8 @@ export const loadMediaBatchAction = action(async (ids: string[]) => {
     return
   isLoadingAtom.set(true)
   const response = await wrap(api.post('/media/batch', { ids }))
-
-  mediaDetailsAtom.set([...mediaDetailsAtom(), ...response.data])
+  console.log(response.data)
+  mediaDetailsAtom.set([...mediaDetailsAtom(), ...response.data.data])
   console.log(mediaDetailsAtom())
   isLoadingAtom.set(false)
 }, 'loadMediaBatchAction').extend(withAsync())

@@ -5,7 +5,7 @@ import {
 import { WsException } from '@nestjs/websockets'
 import { RoomData } from '@netflix-tinder/shared'
 import { customAlphabet } from 'nanoid'
-import { AbstractRoomCacheRepository } from '../../room/interfaces'
+import { AbstractRoomCacheRepository, AbstractRoomRepository } from '../../room/interfaces'
 import { AbstractRoomLifecycleService } from '../interfaces'
 
 @Injectable()
@@ -42,6 +42,7 @@ export class RoomLifecycleService extends AbstractRoomLifecycleService {
 
   constructor(
     private readonly roomCache: AbstractRoomCacheRepository,
+    private readonly roomRepo: AbstractRoomRepository,
   ) {
     super()
   }

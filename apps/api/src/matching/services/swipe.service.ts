@@ -6,7 +6,7 @@ import {
 import { WsException } from '@nestjs/websockets'
 import { RoomStatus } from 'generated/prisma'
 import { AbstractMediaRepository } from '../../media/interfaces'
-import { AbstractRoomCacheRepository, AbstractRoomRepository } from '../../room/interfaces'
+import { AbstractRoomCacheRepository } from '../../room/interfaces'
 import { SwipeAction } from '../dto/swipes.dto'
 import { AbstractMatchingCacheRepository, AbstractRoomStateService, AbstractSwipeService } from '../interfaces'
 
@@ -16,7 +16,6 @@ export class SwipeService extends AbstractSwipeService {
 
   constructor(
     private readonly mediaRepository: AbstractMediaRepository,
-    private readonly roomRepo: AbstractRoomRepository,
     private readonly roomCache: AbstractRoomCacheRepository,
     private readonly matchingCache: AbstractMatchingCacheRepository,
     private readonly roomStateService: AbstractRoomStateService,
@@ -91,7 +90,7 @@ export class SwipeService extends AbstractSwipeService {
   }
 
   private async saveMatchAndUpdateRoom(roomId: string, mediaId: string): Promise<void> {
-    await this.roomRepo.createMatch(roomId, mediaId)
+    await this.roomCache.saveMatch(roomId, mediaId)
     await this.roomCache.updateRoomStatus(roomId, RoomStatus.MATCHED)
     this.logger.log(`Match saved and room ${roomId} status updated to MATCHED`)
   }
